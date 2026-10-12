@@ -54,3 +54,8 @@ The USB serial dependency `com.github.mik3y:usb-serial-for-android:3.9.0` is res
 ## Nama aplikasi
 
 Di perangkat Android, nama aplikasi versi 1.5.8 ditampilkan sebagai **SIM-TANI**, berbeda dari aplikasi STASIUN CUACA lainnya. Nama paket dan identitas Gradle tetap dipertahankan agar tidak mengubah identitas teknis aplikasi.
+
+
+## Perbaikan kompilasi (12 Oktober 2026)
+- Memperbaiki helper pembaca respons UTF-8 yang dipakai saat mengambil data historis Open-Meteo, penyebab kegagalan kompilasi pada Actions run 38206227249.
+- Ini perubahan terisolasi pada `CsvDownloadActivity`; fitur lainnya dipertahankan. Build perlu dijalankan ulang di GitHub Actions untuk konfirmasi.

@@ -891,6 +891,21 @@ public class CsvDownloadActivity extends Activity {
         return column == targetColumn ? field.toString() : null;
     }
 
+    /** Reads a UTF-8 response body and closes the supplied stream. */
+    private String readAll(InputStream stream) throws IOException {
+        if (stream == null) return "";
+        StringBuilder body = new StringBuilder();
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(stream, StandardCharsets.UTF_8))) {
+            char[] buffer = new char[4096];
+            int count;
+            while ((count = reader.read(buffer)) != -1) {
+                body.append(buffer, 0, count);
+            }
+        }
+        return body.toString();
+    }
+
     private String readErrorBody(HttpURLConnection c) {
         InputStream stream = null;
         try {

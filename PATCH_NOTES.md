@@ -43,3 +43,10 @@ Batasan: persentase pemulihan yang dipakai dalam model adalah asumsi estimasi ko
 - Added JitPack to `dependencyResolutionManagement.repositories` in `settings.gradle`; this USB serial library is published via JitPack.
 - Kept dependency version and USB soil-meter implementation unchanged; no agronomy calculations or existing app features were modified.
 - Build must be rerun in GitHub Actions to confirm dependency resolution and expose any subsequent compiler issues.
+
+
+## Build fix — GitHub Actions run 38206227249 (2026-10-12)
+- The latest CI run reached `:app:compileDebugJavaWithJavac` but failed because `CsvDownloadActivity` called `readAll(InputStream)` without defining that helper.
+- Added a small UTF-8 stream-reading helper that closes the HTTP response stream after reading it.
+- This is an isolated compile fix; CSV export behavior and the remaining app features were left intact.
+- Re-run GitHub Actions after uploading this ZIP; the source change has not yet been verified by a successful Android build.
