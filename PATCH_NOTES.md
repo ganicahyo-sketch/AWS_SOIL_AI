@@ -1,0 +1,23 @@
+AWS 1.5.8 — ESTIMASI PUPUK + RIWAYAT + EFISIENSI PEMULIHAN HARA
+
+Perubahan terisolasi:
+- PalmOilDoseModel sekarang memakai asumsi pemulihan hara pupuk berbeda untuk mineral dan gambut, dengan bulk density yang sudah disimpan dari formulir catatan kebun sebagai petunjuk awal (<=0,80 g/cm3 dianggap indikasi gambut; harus dikonfirmasi, bukan klasifikasi pasti).
+- Asumsi awal konservatif: mineral N 35%, P 20%, K 50%, Mg 30%; gambut N 25%, P 15%, K 35%, Mg 25%. Ini parameter heuristik yang dapat dikalibrasi kemudian, bukan norma universal/angka resmi PPKS.
+- Riwayat pupuk 365 hari dihitung sebagai dosis × grade hara × asumsi pemulihan. Dukungan tambahan inferensi grade label/nama untuk pupuk majemuk 3 angka, urea, SP-36, TSP, KCl/MOP, ZA, kieserite, dan dolomit; verifikasi label dianjurkan. Riwayat selain kg/ha dan tanpa tanggal tidak dikreditkan.
+- Kredit hara MgO ikut dihitung jika kadar MgO dicatat atau bisa diperkirakan dari nama produk.
+- Laporan menunjukkan kebutuhan hara tersisa, ekuivalen produk/ha, total untuk luas kebun, dan per pokok bila kepadatan tersedia.
+- Best practice ditambahkan: pemupukan terbagi, penempatan di zona akar, hindari hujan lebat/genangan, penutup tanah/konservasi, pengelolaan pelepah/residu, drainase dan muka air gambut.
+- Tidak menghapus fitur lain; panggilan model lama dipertahankan melalui overload.
+
+Sumber dasar koefisien hara:
+- Farrasati et al. (2026), “Quantifying plant nutrient requirements in oil palm”, European Journal of Agronomy, artikel 128054, DOI/landing page: https://www.sciencedirect.com/science/article/pii/S1161030126000730
+- Prabowo, Foster & Nelson (2023), “Potassium and magnesium uptake and fertiliser use efficiency by oil palm at contrasting sites in Sumatra, Indonesia”, Nutrient Cycling in Agroecosystems 126:263–278, DOI 10.1007/s10705-023-10289-7.
+- Studi 977 kebun sawit rakyat Indonesia menunjukkan input hara sering tidak seimbang dan metode, penempatan serta pembagian aplikasi perlu diperbaiki: https://www.sciencedirect.com/science/article/pii/S0308521X23001348
+
+Batasan: persentase pemulihan yang dipakai dalam model adalah asumsi estimasi konservatif, bukan nilai spesifik yang diambil sebagai angka baku dari publikasi. Data lab/LSU tetap meningkatkan ketepatan. Angka berbasis hasil TBS terutama untuk TM; tidak digunakan sebagai dosis final TBM.
+
+
+## Open-Meteo: lama penyinaran matahari
+- Ditampilkan pada kartu cuaca utama sebagai lama penyinaran matahari dalam jam/hari dari variabel `sunshine_duration` Open-Meteo.
+- CSV Open-Meteo historis resolusi per jam menyertakan kolom `sunshine_hours`; CSV harian menyertakan `sunshine_hours` bersama `daylight_hours`. Nilai durasi API dalam detik dikonversi ke jam.
+- Definisi Open-Meteo mengikuti durasi sinar matahari saat direct normalized irradiance melewati ambang WMO 120 W/m²; nilainya berbeda dari panjang siang (`daylight_duration`).
