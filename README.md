@@ -46,3 +46,11 @@ Isi laporan mencakup cuaca Open-Meteo, ET0, VPD, arah angin berbasis mata angin,
 - API key OpenAI tidak lagi ditanam sebagai default di source code. Masukkan key melalui Pengaturan.
 
 USB Soil Meter 8-in-1: automatic USB-OTG detection for CH340/CH34x adapters (VID 0x1A86; PID 0x7523/0x5523/0x5512/0xE010), Modbus RTU 9600 8N1. Initial map: 0x0000 moisture/10, 0x0001 signed temperature/10, 0x0002 EC, 0x0003 pH/10, 0x0004 N, 0x0005 P, 0x0006 K, 0x0007 fertility. This is a generic candidate map derived from the Soil Detector APK and must be confirmed against the meter model/manual. RS485 and manual entry remain available.
+
+
+### Build dependency note
+The USB serial dependency `com.github.mik3y:usb-serial-for-android:3.9.0` is resolved from JitPack. The JitPack repository is configured centrally in `settings.gradle`; do not move it into `app/build.gradle` because repository mode is `FAIL_ON_PROJECT_REPOS`.
+
+## Nama aplikasi
+
+Di perangkat Android, nama aplikasi versi 1.5.8 ditampilkan sebagai **SIM-TANI**, berbeda dari aplikasi STASIUN CUACA lainnya. Nama paket dan identitas Gradle tetap dipertahankan agar tidak mengubah identitas teknis aplikasi.

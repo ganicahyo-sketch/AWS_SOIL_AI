@@ -1,3 +1,9 @@
+## Identitas aplikasi 1.5.8 — SIM-TANI
+
+- Nama aplikasi pada launcher/daftar aplikasi Android diubah menjadi **SIM-TANI** agar mudah dibedakan dari aplikasi STASIUN CUACA.
+- `AndroidManifest.xml` memakai resource `@string/app_name`; nilai resource ditetapkan di `app/src/main/res/values/strings.xml`.
+- Nama proyek Gradle, package/applicationId, versi, dan fitur lain tidak diubah pada penyesuaian ini.
+
 AWS 1.5.8 — ESTIMASI PUPUK + RIWAYAT + EFISIENSI PEMULIHAN HARA
 
 Perubahan terisolasi:
@@ -30,3 +36,10 @@ Batasan: persentase pemulihan yang dipakai dalam model adalah asumsi estimasi ko
 - Data mentah `last_field_analysis` dan `last_agronomy_analysis` tetap disimpan seperti sebelumnya agar konteks AI, PDF, riwayat, dan perhitungan yang ada tidak kehilangan isi.
 - Jawaban AI diberi format penekanan untuk judul/bagian, tanpa mengubah jawaban asli yang disimpan.
 - Perubahan ini fokus pada tampilan; perhitungan, sumber cuaca, OpenAlex, USB soil meter, CSV, riwayat dan fitur khusus sawit tidak sengaja diubah.
+
+
+## Build fix — GitHub Actions run 38203903945
+- A build failure was traced to unresolved dependency `com.github.mik3y:usb-serial-for-android:3.9.0`.
+- Added JitPack to `dependencyResolutionManagement.repositories` in `settings.gradle`; this USB serial library is published via JitPack.
+- Kept dependency version and USB soil-meter implementation unchanged; no agronomy calculations or existing app features were modified.
+- Build must be rerun in GitHub Actions to confirm dependency resolution and expose any subsequent compiler issues.
