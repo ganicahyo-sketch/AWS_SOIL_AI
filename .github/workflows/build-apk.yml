@@ -1,76 +1,96 @@
-
-name: Build APK - STASIUN CUACA DESA TURUS
+name: Build APK - STASIUN CUACA SAWIT • GANI CAHYO-UNS v1.5.8
 
 on:
-  workflow_dispatch:
   push:
     branches:
       - main
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: android-build-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-apk:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-
+    name: Build Android APK
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
     steps:
       - name: Checkout source
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
 
-      - name: Set up JDK 17
-        uses: actions/setup-java@v5
+      - name: Set up JDK 25
+        uses: actions/setup-java@v6
         with:
           distribution: temurin
-          java-version: '17'
-
-      - name: Set up Node.js 24
-        uses: actions/setup-node@v6
-        with:
-          node-version: '24.21.0'
+          java-version: '25'
+          cache: gradle
 
       - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
+
+      - name: Install Android SDK packages
+        shell: bash
+        run: |
+          set -euxo pipefail
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+          sdkmanager --list_installed
+
+      - name: Set up Gradle 9.4.1
+        uses: gradle/actions/setup-gradle@v6
         with:
-          packages: platform-tools
+          gradle-version: '9.4.1'
+          cache-provider: basic
 
-      - name: Accept Android SDK licenses
-        run: yes | sdkmanager --licenses >/dev/null || true
+      - name: Verify build environment
+        shell: bash
+        run: |
+          set -euxo pipefail
+          java --version
+          gradle --version
+          sdkmanager --version
+          test -f settings.gradle
+          test -f build.gradle
+          test -f app/build.gradle
+          test -f app/src/main/AndroidManifest.xml
 
-      - name: Install Android SDK 36
-        run: sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0"
-
-      - name: Set up Gradle 8.13
-        uses: gradle/actions/setup-gradle@v5
-        with:
-          gradle-version: '8.13'
+      - name: Clean project
+        run: gradle --no-daemon clean --stacktrace
 
       - name: Build debug APK
-        run: gradle --no-daemon :app:assembleDebug --stacktrace
+        run: gradle --no-daemon :app:assembleDebug --stacktrace --warning-mode all
 
       - name: Build release APK
-        run: gradle --no-daemon :app:assembleRelease --stacktrace
+        run: gradle --no-daemon :app:assembleRelease --stacktrace --warning-mode all
 
-      - name: Verify APKs
+      - name: Verify APK outputs
+        shell: bash
         run: |
-          test -f app/build/outputs/apk/debug/app-debug.apk
-          test -f app/build/outputs/apk/release/app-release-unsigned.apk
-          ls -lh app/build/outputs/apk/debug/app-debug.apk
-          ls -lh app/build/outputs/apk/release/app-release-unsigned.apk
+          set -euxo pipefail
+          test -s app/build/outputs/apk/debug/app-debug.apk
+          test -s app/build/outputs/apk/release/app-release-unsigned.apk
+          sha256sum \
+            app/build/outputs/apk/debug/app-debug.apk \
+            app/build/outputs/apk/release/app-release-unsigned.apk
+          ls -lh \
+            app/build/outputs/apk/debug/app-debug.apk \
+            app/build/outputs/apk/release/app-release-unsigned.apk
 
-      - name: Upload debug APK
-        uses: actions/upload-artifact@v6
+      - name: Upload APK artifacts
+        uses: actions/upload-artifact@v7
         with:
-          name: STASIUN-CUACA-DESA-TURUS-v1.5.2-Open-Meteo-Agronomi-debug
-          path: app/build/outputs/apk/debug/app-debug.apk
-          if-no-files-found: error
-          retention-days: 30
-
-      - name: Upload release APK
-        uses: actions/upload-artifact@v6
-        with:
-          name: STASIUN-CUACA-DESA-TURUS-v1.5.2-Open-Meteo-Agronomi-release
-          path: app/build/outputs/apk/release/app-release-unsigned.apk
+          name: STASIUN-CUACA-SAWIT-v1.5.8-APK
+          path: |
+            app/build/outputs/apk/debug/app-debug.apk
+            app/build/outputs/apk/release/app-release-unsigned.apk
           if-no-files-found: error
           retention-days: 30
