@@ -5,6 +5,10 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.view.ViewGroup;
+import android.view.View;
+import android.graphics.drawable.GradientDrawable;
+import android.graphics.Typeface;
 import android.text.InputType;
 import android.view.Gravity;
 import android.widget.ArrayAdapter;
@@ -54,6 +58,7 @@ public class FieldNotesActivity extends Activity {
     private EditText airTemp, airRh, pressure, rain24, et0, lux, par, sunHours, windSpeed;
     private Spinner noteType, severity, soilSource, windDirection, cultivation;
     private TextView autoPhase, analysisView, timelineView, soilSummaryView, dataSourceStatus, usbSoilStatus;
+    private LinearLayout analysisCards;
     private UsbSoilMeter usbSoilMeter;
     private final ExecutorService net = Executors.newSingleThreadExecutor();
 
@@ -154,6 +159,8 @@ public class FieldNotesActivity extends Activity {
 
         autoPhase = findViewById(R.id.fnAutoPhase);
         analysisView = findViewById(R.id.fnAnalysis);
+        analysisCards = findViewById(R.id.fnAnalysisCards);
+        if (analysisView != null) { analysisView.setTextSize(16); analysisView.setLineSpacing(dp(6), 1.10f); analysisView.setVisibility(View.GONE); }
         timelineView = findViewById(R.id.fnTimeline);
         soilSummaryView = findViewById(R.id.fnSoilSummary);
 
@@ -1001,13 +1008,122 @@ public class FieldNotesActivity extends Activity {
             s.append("• EC sensor: gunakan sebagai parameter input utama dengan rentang operasional; ECe lab hanya pembanding bila tersedia.\n");
 
             String compact = compactAnalysis(s.toString());
-            analysisView.setText(compact);
+            renderFieldAnalysisCards(compact);
+            // Keep the original technical report in preferences for PDF/AI compatibility.
             prefs.edit().putString("last_field_analysis", compact).apply();
             soilSummaryView.setText(buildSoilSummary());
             timelineView.setText(buildTimeline(prefs, c));
         } catch (Exception ex) {
-            analysisView.setText("Analisis gagal dihitung: " + (ex.getMessage() == null ? "data belum lengkap" : ex.getMessage()));
+            renderFieldAnalysisError("Analisis belum berhasil dihitung. Periksa kembali data yang diisi. Rincian: " + (ex.getMessage() == null ? "data belum lengkap" : ex.getMessage()));
         }
+    }
+
+    /** Show the same measured/calculated values in spacious sections for non-technical readers. */
+    private void renderFieldAnalysisCards(String raw) {
+        if (analysisCards == null) { analysisView.setVisibility(View.VISIBLE); analysisView.setText(styleFieldAnalysis(raw)); return; }
+        analysisView.setVisibility(View.GONE); analysisCards.setVisibility(View.VISIBLE); analysisCards.removeAllViews();
+        String[] lines = (raw == null ? "" : raw).split("\\r?\\n");
+        TextView title = new TextView(this);
+        title.setText("HASIL ANALISIS KEBUN"); title.setTextColor(0xFF29C6C7); title.setTextSize(20);
+        title.setTypeface(Typeface.DEFAULT, Typeface.BOLD); title.setLineSpacing(dp(3), 1.06f); title.setPadding(dp(2), dp(4), dp(2), dp(6));
+        analysisCards.addView(title, cardWidth());
+        StringBuilder profile = new StringBuilder(); int i = 0;
+        if (lines.length > 0) i = 1; // the technical title is replaced by the plain-language title above
+        for (; i < lines.length; i++) {
+            String line = lines[i].trim(); if (isFieldAnalysisHeader(line)) break;
+            if (!line.isEmpty()) profile.append(friendlyFieldLine(line)).append('\n');
+        }
+        if (profile.length() > 0) addFieldAnalysisCard("RINGKASAN TANAMAN DAN KEBUN", profile.toString().trim(), false, false);
+        addFieldAnalysisNote("Cara membaca: lihat saran tindakan terlebih dahulu. Data sensor adalah hasil pembacaan alat; kata ‘perkiraan’ berarti hasil hitungan, bukan hasil laboratorium. Jika data belum lengkap, hasil perlu diperiksa kembali.");
+        java.util.LinkedHashMap<String, ArrayList<String>> sections = new java.util.LinkedHashMap<>();
+        String heading = null; ArrayList<String> body = new ArrayList<>();
+        for (; i < lines.length; i++) {
+            String line = lines[i].trim();
+            if (isFieldAnalysisHeader(line)) { if (heading != null) sections.put(heading, body); heading = line; body = new ArrayList<>(); }
+            else if (!line.isEmpty()) body.add(friendlyFieldLine(line));
+        }
+        if (heading != null) sections.put(heading, body);
+        ArrayList<String> ordered = new ArrayList<>(sections.keySet());
+        java.util.Collections.sort(ordered, (a, b) -> Integer.compare(fieldSectionOrder(a), fieldSectionOrder(b)));
+        for (String h : ordered) {
+            String upper = h.toUpperCase(Locale.ROOT);
+            addFieldAnalysisCard(friendlyFieldHeading(h), joinFieldLines(sections.get(h)), upper.contains("REKOMENDASI"), upper.contains("DASAR ILMIAH"));
+        }
+    }
+
+    private boolean isFieldAnalysisHeader(String line) { return line != null && line.matches("^[1-9]\\. .+"); }
+    private int fieldSectionOrder(String heading) {
+        String h = heading.toUpperCase(Locale.ROOT);
+        if (h.contains("REKOMENDASI")) return 0;
+        if (h.contains("STATUS TANAH")) return 10;
+        if (h.contains("KECUKUPAN NPK") || h.contains("DOSIS FASE")) return 20;
+        if (h.contains("AIR,") || h.contains("CUACA")) return 30;
+        if (h.contains("PREDIKSI POTENSI OPT")) return 40;
+        if (h.contains("CATATAN LAPANGAN")) return 50;
+        if (h.contains("ANALISIS RENTANG")) return 60;
+        if (h.contains("DASAR ILMIAH")) return 90;
+        return 70;
+    }
+    private String friendlyFieldHeading(String input) {
+        String value = input.replaceFirst("^[0-9]+\\.\\s*", "").trim(); String h = value.toUpperCase(Locale.ROOT);
+        if (h.contains("STATUS TANAH")) return "KONDISI TANAH";
+        if (h.contains("ANALISIS RENTANG")) return "PEMERIKSAAN DATA LAINNYA";
+        if (h.contains("KECUKUPAN NPK") || h.contains("DOSIS FASE")) return "PERKIRAAN KEBUTUHAN PUPUK";
+        if (h.contains("AIR,") || h.contains("CUACA")) return "CUACA DAN KEBUTUHAN AIR";
+        if (h.contains("PREDIKSI POTENSI OPT")) return "WASPADA HAMA DAN PENYAKIT";
+        if (h.contains("CATATAN LAPANGAN")) return "CATATAN KEBUN";
+        if (h.contains("REKOMENDASI MENYELURUH")) return "SARAN TINDAKAN UNTUK PETANI";
+        if (h.contains("DASAR ILMIAH")) return "CATATAN DAN SUMBER PERHITUNGAN";
+        return value;
+    }
+    private String friendlyFieldLine(String input) {
+        if (input == null) return ""; String v = input.trim();
+        String[][] r = {
+            {"Budidaya:", "Cara budidaya:"}, {"Fase:", "Tahap tanaman:"}, {"HST ", "hari setelah tanam (HST) "},
+            {"pH-buffer", "uji penyangga pH"}, {"Al-dd", "aluminium tanah (Al-dd)"}, {"H-dd", "keasaman cadangan (H-dd)"},
+            {"CEC", "kemampuan tanah menahan hara (KTK)"}, {"bulk density", "berat isi tanah"},
+            {"Stok lapisan", "Perkiraan hara pada lapisan tanah"}, {"N tersedia", "Nitrogen (N) tersedia"},
+            {"P tersedia", "Fosfor (P) tersedia"}, {"K tersedia", "Kalium (K) tersedia"},
+            {"N-total diprediksi dari N tersedia", "Perkiraan N total dari N tersedia (bukan hasil laboratorium)"},
+            {"Kelas N-total yang mungkin", "Perkiraan kelompok N total"}, {"ECe laboratorium", "ECe hasil laboratorium"},
+            {"EC sensor", "EC dari sensor tanah"}, {"FC/PWP", "batas ketersediaan air tanah (FC/PWP)"},
+            {"Kebutuhan screening fase ini", "Perkiraan kebutuhan hara tahap ini"}, {"Kredit pupuk tercatat 90 hari", "Perkiraan hara dari pupuk yang tercatat selama 90 hari terakhir"},
+            {"P2O5", "P₂O₅"}, {"K2O", "K₂O"}, {"RH", "kelembapan udara (RH)"},
+            {"VPD", "tekanan udara kering bagi tanaman (VPD)"}, {"ET0", "perkiraan kebutuhan air dari cuaca (ET0)"},
+            {"screening", "perkiraan awal"}, {"STCR-style", "model perkiraan kebutuhan hara"}, {"OPT", "hama/penyakit (OPT)"},
+            {"kg/ha", "kg/ha (kilogram per hektare)"}, {"→", " — "}
+        };
+        for (String[] p : r) v = v.replace(p[0], p[1]);
+        v = v.replace("; ", ";\n• ");
+        return v;
+    }
+    private String joinFieldLines(ArrayList<String> lines) { StringBuilder out = new StringBuilder(); if (lines != null) for (String l : lines) { if (l == null || l.trim().isEmpty()) continue; if (out.length() > 0) out.append('\n'); out.append(l.trim()); } return out.toString(); }
+    private void addFieldAnalysisCard(String heading, String body, boolean priority, boolean technical) {
+        LinearLayout card = new LinearLayout(this); card.setOrientation(LinearLayout.VERTICAL); card.setPadding(dp(13), dp(12), dp(13), dp(12));
+        card.setBackground(fieldRoundBg(technical ? 0xFF102B3C : 0xFF122B3B, technical ? 0xFF244353 : 0xFF214457));
+        LinearLayout.LayoutParams lp = cardWidth(); lp.topMargin = dp(9); analysisCards.addView(card, lp);
+        TextView title = new TextView(this); title.setText(heading); title.setTextColor(priority ? 0xFFFFD479 : 0xFF29C6C7); title.setTextSize(17); title.setTypeface(Typeface.DEFAULT, Typeface.BOLD); title.setLineSpacing(dp(2), 1.04f); title.setPadding(0, 0, 0, dp(7)); card.addView(title, cardWidth());
+        if (technical) addFieldBody(card, "Bagian ini berisi informasi tambahan. Utamakan bagian saran tindakan di atas.", false);
+        if (body == null || body.trim().isEmpty()) { addFieldBody(card, "Belum ada informasi yang cukup untuk bagian ini.", false); return; }
+        for (String rawLine : body.split("\\n")) { String text = rawLine.trim(); if (text.isEmpty()) continue; boolean bullet = text.startsWith("•") || text.startsWith("-"); if (bullet) text = text.replaceFirst("^[•-]\\s*", ""); addFieldBody(card, text, bullet); }
+    }
+    private void addFieldAnalysisNote(String text) {
+        LinearLayout card = new LinearLayout(this); card.setOrientation(LinearLayout.VERTICAL); card.setPadding(dp(12), dp(10), dp(12), dp(10)); card.setBackground(fieldRoundBg(0xFF173546, 0xFF3E5A67));
+        LinearLayout.LayoutParams lp = cardWidth(); lp.topMargin = dp(7); analysisCards.addView(card, lp);
+        TextView title = new TextView(this); title.setText("PENTING UNTUK DIBACA"); title.setTextColor(0xFFFFD479); title.setTextSize(14); title.setTypeface(Typeface.DEFAULT, Typeface.BOLD); card.addView(title, cardWidth()); addFieldBody(card, text, false);
+    }
+    private void addFieldBody(LinearLayout parent, String text, boolean bullet) {
+        LinearLayout row = new LinearLayout(this); row.setOrientation(LinearLayout.HORIZONTAL); row.setGravity(Gravity.TOP); LinearLayout.LayoutParams lp = cardWidth(); lp.topMargin = dp(3); lp.bottomMargin = dp(5); parent.addView(row, lp);
+        if (bullet) { TextView dot = new TextView(this); dot.setText("•"); dot.setTextColor(0xFF45D483); dot.setTextSize(17); dot.setTypeface(Typeface.DEFAULT, Typeface.BOLD); dot.setPadding(0, 0, dp(8), 0); row.addView(dot, new LinearLayout.LayoutParams(dp(18), -2)); }
+        TextView tv = new TextView(this); tv.setText(text); tv.setTextColor(0xFFF0F4F6); tv.setTextSize(15.5f); tv.setLineSpacing(dp(5), 1.08f); tv.setIncludeFontPadding(true); row.addView(tv, new LinearLayout.LayoutParams(0, -2, 1f));
+    }
+    private GradientDrawable fieldRoundBg(int color, int stroke) { GradientDrawable bg = new GradientDrawable(); bg.setColor(color); bg.setCornerRadius(dp(13)); bg.setStroke(dp(1), stroke); return bg; }
+    private LinearLayout.LayoutParams cardWidth() { return new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT); }
+    private CharSequence styleFieldAnalysis(String text) { android.text.SpannableString out = new android.text.SpannableString(text == null ? "" : text); if (out.length() > 0) { out.setSpan(new android.text.style.StyleSpan(Typeface.BOLD), 0, Math.min(out.length(), 22), android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE); } return out; }
+    private void renderFieldAnalysisError(String message) {
+        if (analysisView != null) analysisView.setVisibility(View.GONE);
+        if (analysisCards == null) { if (analysisView != null) { analysisView.setVisibility(View.VISIBLE); analysisView.setText(message); } return; }
+        analysisCards.removeAllViews(); analysisCards.setVisibility(View.VISIBLE); addFieldAnalysisCard("ANALISIS BELUM BERHASIL", message, true, false);
     }
 
     private void appendRecommendations(StringBuilder s, String c, AgronomyEngine.CropProfile p,

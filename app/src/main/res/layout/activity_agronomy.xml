@@ -49,17 +49,31 @@
                 android:background="@drawable/bg_chip"/>
         </LinearLayout>
 
+        <!-- Keep the complete report text for AI/PDF and show the readable cards below. -->
         <TextView
             android:id="@+id/agroReport"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:background="@drawable/bg_panel"
-            android:padding="14dp"
             android:text="--"
             android:textColor="@color/text_main"
-            android:textSize="15sp"
-            android:lineSpacingExtra="2dp"/>
+            android:textSize="16sp"
+            android:lineSpacingExtra="5dp"
+            android:visibility="gone"/>
+
+        <LinearLayout
+            android:id="@+id/agroReportCards"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:orientation="vertical">
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Hasil analisis akan tampil di sini."
+                android:textColor="@color/text_muted"
+                android:textSize="16sp"
+                android:lineSpacingExtra="5dp" />
+        </LinearLayout>
 
         <TextView
             android:id="@+id/agroAiButton"
@@ -81,7 +95,9 @@
             android:padding="14dp"
             android:text="AI belum dijalankan."
             android:textColor="@color/text_main"
-            android:textSize="14sp"/>
+            android:textSize="16sp"
+            android:lineSpacingExtra="6dp"
+            android:lineSpacingMultiplier="1.08"/>
 
         <TextView
             android:id="@+id/agroPdf"

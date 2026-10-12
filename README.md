@@ -1,3 +1,6 @@
+## Tampilan analisis ramah petani
+Hasil di Catatan Lapangan dan Analisis Agronomi kini dipisahkan menjadi kartu berjarak; bagian saran tindakan didahulukan, termasuk ringkasan dan data khusus kelapa sawit. Isi laporan teknis yang disimpan untuk AI/PDF tidak diganti oleh teks tampilan.
+
 # STASIUN CUACA • GANI CAHYO-UNS v1.5.8
 
 Android project lengkap dengan Open-Meteo + Agronomi + Catatan Lapangan.

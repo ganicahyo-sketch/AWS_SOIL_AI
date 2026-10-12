@@ -720,15 +720,33 @@
                     android:textStyle="bold"
                     android:textSize="15sp"/>
 
+                <!-- Plain-text fallback is kept for compatibility; successful results use cards. -->
                 <TextView
                     android:id="@+id/fnAnalysis"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="7dp"
-                    android:text="Belum ada analisis."
+                    android:text="Analisis belum tersedia. Lengkapi data kebun, lalu jalankan analisis."
                     android:textColor="@color/text_main"
-                    android:textSize="14sp"
-                    android:lineSpacingExtra="2dp"/>
+                    android:textSize="16sp"
+                    android:lineSpacingExtra="6dp"
+                    android:lineSpacingMultiplier="1.10"
+                    android:visibility="gone"/>
+
+                <LinearLayout
+                    android:id="@+id/fnAnalysisCards"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:orientation="vertical">
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Hasil analisis akan tampil di sini setelah tombol analisis ditekan."
+                        android:textColor="@color/text_muted"
+                        android:textSize="16sp"
+                        android:lineSpacingExtra="5dp" />
+                </LinearLayout>
             </LinearLayout>
 
             <LinearLayout
@@ -762,8 +780,9 @@
                     android:layout_marginTop="7dp"
                     android:text="Pustaka: FAO-56 Penman–Monteith; FAO salinity/crop water; rekomendasi NPK Pertanian Indonesia 2024; review pH/amendment 2023; model VPD tanaman; model penyakit/leaf wetness APS; model degree-day Spodoptera frugiperda."
                     android:textColor="@color/text_muted"
-                    android:textSize="14sp"
-                    android:lineSpacingExtra="2dp"/>
+                    android:textSize="15sp"
+                    android:lineSpacingExtra="6dp"
+                    android:lineSpacingMultiplier="1.08"/>
             </LinearLayout>
 
             <LinearLayout

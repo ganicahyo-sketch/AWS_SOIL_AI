@@ -5,6 +5,11 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.ViewGroup;
+import android.view.View;
+import android.view.Gravity;
+import android.graphics.drawable.GradientDrawable;
+import android.graphics.Typeface;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.LinearLayout;
@@ -19,6 +24,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -30,12 +36,16 @@ public class AgronomyActivity extends Activity {
     private final ExecutorService net=Executors.newSingleThreadExecutor();
     private android.content.SharedPreferences prefs;
     private TextView report, aiStatus;
+    private LinearLayout reportCards;
 
     @Override public void onCreate(Bundle b){
         super.onCreate(b);
         prefs=getSharedPreferences(PREFS,Context.MODE_PRIVATE);
         setContentView(R.layout.activity_agronomy);
         report=findViewById(R.id.agroReport); aiStatus=findViewById(R.id.agroAiStatus);
+        reportCards=findViewById(R.id.agroReportCards);
+        if (report != null) { report.setVisibility(View.GONE); report.setTextSize(16); report.setLineSpacing(dp(5), 1.08f); }
+        if (aiStatus != null) { aiStatus.setTextSize(16); aiStatus.setLineSpacing(dp(5), 1.08f); }
         findViewById(R.id.agroBack).setOnClickListener(v->finish());
         findViewById(R.id.agroFieldNotes).setOnClickListener(v->startActivity(new Intent(this,FieldNotesActivity.class)));
         findViewById(R.id.agroPdf).setOnClickListener(v->startActivity(new Intent(this,PdfReportActivity.class)));
@@ -126,7 +136,7 @@ public class AgronomyActivity extends Activity {
         // Histori terpadu disimpan untuk laporan cetak/PDF, tetapi tidak ditampilkan pada layar analisis utama.
         String compact = compactReport(s.toString());
         if (PalmOilAdvisor.isOilPalm(crop)) compact = buildPalmExecutiveSummary(crop, hst) + "\n\n────────────────────────\nDETAIL ANALISIS\n\n" + compact;
-        report.setText(compact); prefs.edit().putString("last_agronomy_analysis",compact).apply();
+        report.setText(compact); renderAgronomyReportCards(compact); prefs.edit().putString("last_agronomy_analysis",compact).apply();
     }
 
     /** Short first-screen summary; the full analysis remains available below it and in reports. */
@@ -196,6 +206,161 @@ public class AgronomyActivity extends Activity {
         return out.toString().trim();
     }
 
+    /** Split the complete unchanged calculation report into spacious, plain-language cards. */
+    private void renderAgronomyReportCards(String raw) {
+        if (reportCards == null || raw == null) { if (report != null) report.setVisibility(View.VISIBLE); return; }
+        reportCards.removeAllViews();
+        reportCards.setVisibility(View.VISIBLE);
+        String[] lines = raw.split("\\r?\\n");
+        int cursor = 0;
+        TextView mainTitle = new TextView(this);
+        mainTitle.setText("HASIL ANALISIS KEBUN");
+        mainTitle.setTextColor(0xFF29C6C7); mainTitle.setTextSize(20);
+        mainTitle.setTypeface(Typeface.DEFAULT, Typeface.BOLD); mainTitle.setLineSpacing(dp(3), 1.06f);
+        mainTitle.setPadding(dp(2), dp(4), dp(2), dp(6));
+        reportCards.addView(mainTitle, fullWidthWrap());
+
+        // In the oil-palm variant, retain and foreground the existing executive summary.
+        if (lines.length > 0 && lines[0].toUpperCase(Locale.ROOT).startsWith("RINGKASAN AWAL")) {
+            StringBuilder summary = new StringBuilder();
+            cursor = 1;
+            for (; cursor < lines.length; cursor++) {
+                String t = lines[cursor].trim();
+                if (t.equalsIgnoreCase("DETAIL ANALISIS") || t.startsWith("────")) { cursor++; break; }
+                if (!t.isEmpty()) summary.append(friendlyAgronomyLine(t)).append('\n');
+            }
+            addAgronomyCard("RINGKASAN AWAL KEBUN", summary.toString().trim(), true, false);
+        } else if (lines.length > 0) {
+            cursor = 1;
+        }
+
+        StringBuilder metadata = new StringBuilder();
+        for (; cursor < lines.length; cursor++) {
+            String line = lines[cursor].trim();
+            if (isAgronomyHeading(line)) break;
+            if (line.isEmpty() || line.equalsIgnoreCase("DETAIL ANALISIS") || line.startsWith("────")) continue;
+            // Skip duplicate technical report title after the executive summary.
+            if (line.startsWith("ANALISIS AGRONOMI TERPADU")) continue;
+            metadata.append(friendlyAgronomyLine(line)).append('\n');
+        }
+        if (metadata.length() > 0) addAgronomyCard("PROFIL TANAMAN DAN KEBUN", metadata.toString().trim(), false, false);
+        addAgronomyNote("Cara membaca: saran tindakan ada di bagian atas. Angka sensor dan input ditampilkan sebagai data masukan; label ‘perkiraan’ berarti hitungan model, bukan hasil laboratorium.");
+
+        java.util.LinkedHashMap<String, ArrayList<String>> sections = new java.util.LinkedHashMap<>();
+        String heading = null; ArrayList<String> body = new ArrayList<>();
+        for (; cursor < lines.length; cursor++) {
+            String line = lines[cursor].trim();
+            if (isAgronomyHeading(line)) {
+                if (heading != null) sections.put(heading, body);
+                heading = line; body = new ArrayList<>();
+            } else if (!line.isEmpty()) body.add(friendlyAgronomyLine(line));
+        }
+        if (heading != null) sections.put(heading, body);
+        ArrayList<String> ordered = new ArrayList<>(sections.keySet());
+        java.util.Collections.sort(ordered, (a, b) -> Integer.compare(agronomySectionOrder(a), agronomySectionOrder(b)));
+        for (String h : ordered) {
+            String hu = h.toUpperCase(Locale.ROOT);
+            addAgronomyCard(friendlyAgronomyHeading(h), joinFriendlyLines(sections.get(h)), hu.contains("REKOMENDASI"), hu.contains("CATATAN ILMIAH") || hu.contains("SUMBER"));
+        }
+    }
+
+    private boolean isAgronomyHeading(String line) { return line != null && line.matches("^[1-9]\\. .+"); }
+
+    private int agronomySectionOrder(String heading) {
+        String h = heading.toUpperCase(Locale.ROOT);
+        if (h.contains("REKOMENDASI")) return 0;
+        if (h.contains("TANAH")) return 10;
+        if (h.contains("NPK") || h.contains("KEBUTUHAN FASE")) return 20;
+        if (h.contains("DATA KEBUN") || h.contains("LAB KHUSUS")) return 25;
+        if (h.contains("CUACA") || h.contains("AIR,")) return 30;
+        if (h.contains("OPT") || h.contains("HAMA") || h.contains("PENYAKIT")) return 40;
+        if (h.contains("ANALISIS RENTANG")) return 50;
+        if (h.contains("CATATAN ILMIAH") || h.contains("SUMBER")) return 90;
+        return 60;
+    }
+
+    private String friendlyAgronomyHeading(String input) {
+        String value = input.replaceFirst("^[0-9]+\\.\\s*", "").trim();
+        String h = value.toUpperCase(Locale.ROOT);
+        if (h.equals("TANAH") || h.contains("STATUS TANAH")) return "KONDISI TANAH";
+        if (h.contains("ANALISIS RENTANG SEMUA PARAMETER")) return "PEMERIKSAAN DATA LAINNYA";
+        if (h.contains("NPK") || h.contains("KEBUTUHAN FASE")) return "PERKIRAAN KEBUTUHAN PUPUK";
+        if (h.contains("CUACA") || h.contains("VPD")) return "CUACA DAN KEBUTUHAN AIR";
+        if (h.contains("PREDIKSI POTENSI OPT")) return "WASPADA HAMA DAN PENYAKIT";
+        if (h.contains("REKOMENDASI TEKNIS")) return "SARAN TINDAKAN UNTUK KEBUN";
+        if (h.contains("DATA KEBUN") || h.contains("LAB KHUSUS")) return "DATA TAMBAHAN KELAPA SAWIT";
+        if (h.contains("CATATAN ILMIAH")) return "CATATAN DAN SUMBER PERHITUNGAN";
+        return value;
+    }
+
+    private String friendlyAgronomyLine(String input) {
+        if (input == null) return "";
+        String value = input.trim();
+        String[][] replacements = {
+            {"ANALISIS AGRONOMI TERPADU v1.5.8", "HASIL ANALISIS KEBUN"},
+            {"KOMODITAS:", "Tanaman:"}, {"MODE:", "Cara budidaya:"}, {"HST:", "Umur setelah tanam (hari):"},
+            {"FASE:", "Tahap tanaman:"}, {"LUAS:", "Luas kebun:"}, {"TARGET HASIL:", "Target hasil:"},
+            {"pH ", "pH tanah "}, {"Metode N/P/K:", "Metode pemeriksaan N/P/K:"}, {"Metode N/P/K:", "Metode pemeriksaan N/P/K:"},
+            {"N tersedia", "Nitrogen (N) tersedia"}, {"P tersedia", "Fosfor (P) tersedia"}, {"K tersedia", "Kalium (K) tersedia"},
+            {"N-total diprediksi dari N tersedia", "Perkiraan N total dari N tersedia (bukan hasil laboratorium)"},
+            {"Kelas N-total yang mungkin", "Perkiraan kelompok N total"}, {"EC sensor", "EC dari sensor tanah"},
+            {"ECe lab", "ECe hasil laboratorium"}, {"ECe laboratorium", "ECe hasil laboratorium"},
+            {"Kelembapan tanah", "Kadar air tanah"}, {"bulk density", "berat isi tanah"}, {"Stok lapisan", "Perkiraan hara pada lapisan tanah"},
+            {"N skrining fase:", "Perkiraan kebutuhan nitrogen (N) tahap ini:"}, {"P2O5 skrining fase:", "Perkiraan kebutuhan fosfor (P₂O₅) tahap ini:"},
+            {"K2O skrining fase:", "Perkiraan kebutuhan kalium (K₂O) tahap ini:"}, {"Kebutuhan screening fase ini:", "Perkiraan kebutuhan hara tahap ini:"},
+            {"P2O5", "P₂O₅"}, {"K2O", "K₂O"}, {"RH ", "Kelembapan udara (RH) "}, {"VPD", "tekanan udara kering bagi tanaman (VPD)"},
+            {"ET0", "perkiraan kebutuhan air cuaca (ET0)"}, {"Forecast 7 hari:", "Prakiraan cuaca 7 hari:"},
+            {"PREDIKSI POTENSI OPT", "PERINGATAN DINI HAMA/PENYAKIT"}, {"RISK SCREENING", "perkiraan risiko awal"},
+            {"STCR-style screening", "perkiraan kebutuhan hara"}, {"screening", "perkiraan awal"}, {"PHT", "pengendalian hama terpadu"},
+            {"kg/ha", "kg/ha (kilogram per hektare)"}, {"µS/cm", "µS/cm"}, {"; ", ";\n• "}, {"→", " — "}
+        };
+        for (String[] pair : replacements) value = value.replace(pair[0], pair[1]);
+        return value;
+    }
+
+    private String joinFriendlyLines(ArrayList<String> lines) {
+        StringBuilder out = new StringBuilder();
+        if (lines != null) for (String line : lines) { if (line == null || line.trim().isEmpty()) continue; if (out.length() > 0) out.append('\n'); out.append(line.trim()); }
+        return out.toString();
+    }
+
+    private void addAgronomyCard(String heading, String body, boolean priority, boolean technical) {
+        int accent = priority ? 0xFFFFD479 : 0xFF29C6C7;
+        LinearLayout card = new LinearLayout(this); card.setOrientation(LinearLayout.VERTICAL);
+        card.setPadding(dp(13), dp(12), dp(13), dp(12));
+        card.setBackground(roundBg(technical ? 0xFF102B3C : 0xFF122B3B, technical ? 0xFF244353 : 0xFF214457));
+        LinearLayout.LayoutParams lp = fullWidthWrap(); lp.topMargin = dp(9); reportCards.addView(card, lp);
+        TextView title = new TextView(this); title.setText(heading); title.setTextColor(accent); title.setTextSize(17);
+        title.setTypeface(Typeface.DEFAULT, Typeface.BOLD); title.setLineSpacing(dp(2), 1.04f); title.setPadding(0, 0, 0, dp(6)); card.addView(title, fullWidthWrap());
+        if (technical) addAgronomyBody(card, "Bagian ini berisi rincian tambahan. Utamakan saran tindakan di bagian atas.", false);
+        if (body == null || body.trim().isEmpty()) { addAgronomyBody(card, "Belum ada informasi yang cukup untuk bagian ini.", false); return; }
+        for (String rawLine : body.split("\\n")) {
+            String content = rawLine.trim(); if (content.isEmpty()) continue;
+            boolean bullet = content.startsWith("•") || content.startsWith("-");
+            if (bullet) content = content.replaceFirst("^[•-]\\s*", "");
+            addAgronomyBody(card, content, bullet);
+        }
+    }
+
+    private void addAgronomyNote(String text) {
+        LinearLayout card = new LinearLayout(this); card.setOrientation(LinearLayout.VERTICAL); card.setPadding(dp(12), dp(10), dp(12), dp(10));
+        card.setBackground(roundBg(0xFF173546, 0xFF3E5A67)); LinearLayout.LayoutParams lp = fullWidthWrap(); lp.topMargin = dp(7); reportCards.addView(card, lp);
+        TextView title = new TextView(this); title.setText("CATATAN PENTING"); title.setTextColor(0xFFFFD479); title.setTextSize(14); title.setTypeface(Typeface.DEFAULT, Typeface.BOLD); card.addView(title, fullWidthWrap());
+        addAgronomyBody(card, text, false);
+    }
+
+    private void addAgronomyBody(LinearLayout parent, String text, boolean bullet) {
+        LinearLayout row = new LinearLayout(this); row.setOrientation(LinearLayout.HORIZONTAL); row.setGravity(Gravity.TOP);
+        LinearLayout.LayoutParams rowLp = fullWidthWrap(); rowLp.topMargin = dp(3); rowLp.bottomMargin = dp(5); parent.addView(row, rowLp);
+        if (bullet) { TextView dot = new TextView(this); dot.setText("•"); dot.setTextColor(0xFF45D483); dot.setTextSize(17); dot.setTypeface(Typeface.DEFAULT, Typeface.BOLD); dot.setPadding(0, 0, dp(8), 0); row.addView(dot, new LinearLayout.LayoutParams(dp(18), -2)); }
+        TextView textView = new TextView(this); textView.setText(text); textView.setTextColor(0xFFF0F4F6); textView.setTextSize(15.5f); textView.setLineSpacing(dp(5), 1.08f); textView.setIncludeFontPadding(true);
+        row.addView(textView, new LinearLayout.LayoutParams(0, -2, 1f));
+    }
+
+    private GradientDrawable roundBg(int color, int stroke) { GradientDrawable bg = new GradientDrawable(); bg.setColor(color); bg.setCornerRadius(dp(13)); bg.setStroke(dp(1), stroke); return bg; }
+    private LinearLayout.LayoutParams fullWidthWrap() { return new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT); }
+    private int dp(float value) { return Math.round(value * getResources().getDisplayMetrics().density); }
+
     private void showNotes(){
         ScrollView root=new ScrollView(this); int pad=(int)(16*getResources().getDisplayMetrics().density); root.setPadding(pad,pad,pad,pad);
         LinearLayout content=new LinearLayout(this); content.setOrientation(LinearLayout.VERTICAL);
@@ -252,6 +417,26 @@ public class AgronomyActivity extends Activity {
     private double[] fertCredit(String crop){double n=0,p=0,k=0;try{JSONArray a=new JSONArray(prefs.getString("fert_history","[]"));for(int i=0;i<a.length();i++){JSONObject o=a.optJSONObject(i);if(o==null||!same(o.optString("crop",""),crop)||!"kg/ha".equalsIgnoreCase(o.optString("unit","kg/ha")))continue;double d=o.optDouble("dose",0);n+=d*o.optDouble("nPct",0)/100;p+=d*o.optDouble("pPct",0)/100;k+=d*o.optDouble("kPct",0)/100;}}catch(Exception ignored){}return new double[]{n,p,k};}
     private boolean same(String a,String b){return AgronomyEngine.normalizeCrop(a).equalsIgnoreCase(AgronomyEngine.normalizeCrop(b));}
     private String recent(String key,int max){try{JSONArray a=new JSONArray(prefs.getString(key,"[]"));StringBuilder s=new StringBuilder();for(int i=Math.max(0,a.length()-max);i<a.length();i++)s.append(a.optJSONObject(i)).append("\n");return s.toString().trim().isEmpty()?"(tidak ada)":s.toString();}catch(Exception e){return "(tidak ada)";}}
+    /** Improve AI answer readability while keeping the exact original answer in preferences. */
+    private CharSequence styleAiResponse(String raw) {
+        String cleaned = (raw == null ? "" : raw).replace("**", "").replace("###", "").replace("##", "");
+        android.text.SpannableString styled = new android.text.SpannableString(cleaned);
+        String all = styled.toString();
+        int start = 0;
+        while (start < all.length()) {
+            int end = all.indexOf('\n', start); if (end < 0) end = all.length();
+            String line = all.substring(start, end).trim();
+            boolean numbered = line.matches("^[0-9]+[.)].*") || line.matches("^[-•]\\s+.+");
+            boolean heading = line.length() > 4 && line.equals(line.toUpperCase(Locale.ROOT)) && !line.startsWith("http");
+            if (!line.isEmpty() && (numbered || heading)) {
+                styled.setSpan(new android.text.style.StyleSpan(Typeface.BOLD), start, end, android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                styled.setSpan(new android.text.style.ForegroundColorSpan(0xFF29C6C7), start, end, android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            }
+            start = end + 1;
+        }
+        return styled;
+    }
+
     private void requestAi(){
         String key=prefs.getString("ai_api_key",DEFAULT_AI_KEY).trim(); if(key.isEmpty()){aiStatus.setText("Masukkan OpenAI API key di Pengaturan.");return;}
         final TextView button=findViewById(R.id.agroAiButton); button.setEnabled(false); aiStatus.setText("Menganalisis data, mencari OPT dan menyusun rekomendasi AI...");
@@ -259,7 +444,7 @@ public class AgronomyActivity extends Activity {
         final double aiLat=prefs.getFloat("latitude",Float.NaN);
         final double aiLon=prefs.getFloat("longitude",Float.NaN);
         final String context="LOKASI GPS: "+(Double.isFinite(aiLat)?String.format(Locale.US,"%.6f",aiLat):"--")+", "+(Double.isFinite(aiLon)?String.format(Locale.US,"%.6f",aiLon):"--")+"\n"+report.getText().toString();
-        net.execute(()->{try{String lit=fetchOpenAlex(prefs.getString("crop","Tanaman pertanian"), context);String ans=callAi(key,model,context,lit);prefs.edit().putString("last_ai_advice",ans).putLong("last_ai_advice_epoch",System.currentTimeMillis()).apply();runOnUiThread(()->{aiStatus.setText(ans);button.setEnabled(true);});}catch(Exception e){runOnUiThread(()->{aiStatus.setText("AI gagal: "+msg(e));button.setEnabled(true);});}});
+        net.execute(()->{try{String lit=fetchOpenAlex(prefs.getString("crop","Tanaman pertanian"), context);String ans=callAi(key,model,context,lit);prefs.edit().putString("last_ai_advice",ans).putLong("last_ai_advice_epoch",System.currentTimeMillis()).apply();runOnUiThread(()->{aiStatus.setText(styleAiResponse(ans));button.setEnabled(true);});}catch(Exception e){runOnUiThread(()->{aiStatus.setText("AI gagal: "+msg(e));button.setEnabled(true);});}});
     }
     private String fetchOpenAlex(String crop,String context)throws Exception{
         String q=""+crop+" agriculture soil fertility pest disease weather forecasting";

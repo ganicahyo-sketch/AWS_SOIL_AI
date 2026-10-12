@@ -21,3 +21,12 @@ Batasan: persentase pemulihan yang dipakai dalam model adalah asumsi estimasi ko
 - Ditampilkan pada kartu cuaca utama sebagai lama penyinaran matahari dalam jam/hari dari variabel `sunshine_duration` Open-Meteo.
 - CSV Open-Meteo historis resolusi per jam menyertakan kolom `sunshine_hours`; CSV harian menyertakan `sunshine_hours` bersama `daylight_hours`. Nilai durasi API dalam detik dikonversi ke jam.
 - Definisi Open-Meteo mengikuti durasi sinar matahari saat direct normalized irradiance melewati ambang WMO 120 W/m²; nilainya berbeda dari panjang siang (`daylight_duration`).
+
+## Penyajian hasil analisis — ramah petani
+- Catatan Lapangan dan halaman Analisis Agronomi menampilkan hasil dalam kartu terpisah dengan jarak antarbagian dan ukuran teks yang lebih nyaman dibaca.
+- Saran tindakan ditampilkan sebelum rincian teknis, kemudian diikuti kondisi tanah, perkiraan kebutuhan pupuk, cuaca/air, peringatan hama dan penyakit, catatan kebun, dan analisis tambahan.
+- Label parameter dan satuan diperjelas dengan bahasa Indonesia sehari-hari.
+- Untuk kelapa sawit, ringkasan awal serta seluruh rincian data kebun, data laboratorium daun/tanah dan model kebutuhan pupuk tetap dipertahankan pada kartu masing-masing.
+- Data mentah `last_field_analysis` dan `last_agronomy_analysis` tetap disimpan seperti sebelumnya agar konteks AI, PDF, riwayat, dan perhitungan yang ada tidak kehilangan isi.
+- Jawaban AI diberi format penekanan untuk judul/bagian, tanpa mengubah jawaban asli yang disimpan.
+- Perubahan ini fokus pada tampilan; perhitungan, sumber cuaca, OpenAlex, USB soil meter, CSV, riwayat dan fitur khusus sawit tidak sengaja diubah.
