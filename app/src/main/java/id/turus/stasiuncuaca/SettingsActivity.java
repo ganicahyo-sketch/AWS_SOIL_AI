@@ -7,12 +7,6 @@ import android.text.InputType;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.Spinner;
-import android.location.Location;
-import android.location.LocationManager;
-import android.location.LocationListener;
-import android.Manifest;
-import android.content.pm.PackageManager;
-import android.os.Looper;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -24,10 +18,8 @@ public class SettingsActivity extends Activity {
     private static final String DEFAULT_READ_KEY = "P4B56Z7HZM56Q7HJ";
     private static final String DEFAULT_AI_KEY = "";
     private android.content.SharedPreferences p;
-    private EditText title, channel, readKey, aiKey, aiModel, crop, lat, lon, elev;
-    private Spinner cult, weatherProvider;
-    private EditText weatherApiKey;
-    private static final int GPS_REQ = 78;
+    private EditText title, channel, readKey, aiKey, aiModel, geminiKey, geminiModel, openRouterKey, openRouterModel, crop, lat, lon, elev;
+    private Spinner cult, aiProvider;
     private TextView toggleRead, toggleAi;
     private EditText[] fieldName = new EditText[8];
     private EditText[] fieldUnit = new EditText[8];
@@ -37,9 +29,9 @@ public class SettingsActivity extends Activity {
         setContentView(R.layout.activity_settings);
         p = getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         title=findViewById(R.id.appTitle); channel=findViewById(R.id.channel); readKey=findViewById(R.id.readKey);
-        aiKey=findViewById(R.id.aiKey); aiModel=findViewById(R.id.aiModel); crop=findViewById(R.id.crop);
+        aiKey=findViewById(R.id.aiKey); aiModel=findViewById(R.id.aiModel); geminiKey=findViewById(R.id.geminiKey); geminiModel=findViewById(R.id.geminiModel); openRouterKey=findViewById(R.id.openRouterKey); openRouterModel=findViewById(R.id.openRouterModel); aiProvider=findViewById(R.id.aiProvider); crop=findViewById(R.id.crop);
         lat=findViewById(R.id.latitude); lon=findViewById(R.id.longitude); elev=findViewById(R.id.elevation);
-        cult=findViewById(R.id.cultivation); weatherProvider=findViewById(R.id.weatherProvider); weatherApiKey=findViewById(R.id.weatherApiKey); toggleRead=findViewById(R.id.toggleReadKey); toggleAi=findViewById(R.id.toggleAiKey);
+        cult=findViewById(R.id.cultivation); toggleRead=findViewById(R.id.toggleReadKey); toggleAi=findViewById(R.id.toggleAiKey);
         for(int i=0;i<8;i++){
             int n=i+1;
             fieldName[i]=findViewById(getResources().getIdentifier("fieldName"+n,"id",getPackageName()));
@@ -47,10 +39,10 @@ public class SettingsActivity extends Activity {
         }
         ArrayAdapter<String> ad=new ArrayAdapter<>(this,android.R.layout.simple_spinner_item,new String[]{"Konvensional / PHT","Organik"});
         ad.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item); cult.setAdapter(ad);
-        ArrayAdapter<String> weatherAdapter=new ArrayAdapter<>(this,android.R.layout.simple_spinner_item,new String[]{"Open-Meteo (disarankan, tanpa API key)","WeatherAPI.com (perlu API key)"});
-        weatherAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item); weatherProvider.setAdapter(weatherAdapter);
+        ArrayAdapter<String> aiAd=new ArrayAdapter<>(this,android.R.layout.simple_spinner_item,new String[]{"OpenAI","Google Gemini","OpenRouter"});
+        aiAd.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item); aiProvider.setAdapter(aiAd);
         load();
-        findViewById(R.id.useGps).setOnClickListener(v->requestGps());
+        findViewById(R.id.useGps).setOnClickListener(v->startActivity(new android.content.Intent(this,MainActivity.class)));
         findViewById(R.id.saveSettings).setOnClickListener(v->save());
         findViewById(R.id.cancelSettings).setOnClickListener(v->finish());
         toggleRead.setOnClickListener(v->toggle(readKey,toggleRead));
@@ -66,11 +58,15 @@ public class SettingsActivity extends Activity {
         String savedAiKey=p.getString("ai_api_key","").trim();
         aiKey.setText(savedAiKey.isEmpty()?DEFAULT_AI_KEY:savedAiKey);
         aiModel.setText(p.getString("ai_model","gpt-6-luna"));
+        geminiKey.setText(p.getString("gemini_api_key",""));
+        geminiModel.setText(p.getString("gemini_model","gemini-2.5-flash"));
+        openRouterKey.setText(p.getString("openrouter_api_key",""));
+        openRouterModel.setText(p.getString("openrouter_model","openai/gpt-oss-20b:free"));
+        String provider=p.getString("ai_provider","OpenAI");
+        aiProvider.setSelection("Google Gemini".equals(provider)?1:("OpenRouter".equals(provider)?2:0));
         crop.setText(p.getString("crop","Tanaman pertanian"));
         lat.setText(f(p.getFloat("latitude",Float.NaN))); lon.setText(f(p.getFloat("longitude",Float.NaN))); elev.setText(f(p.getFloat("elevation",Float.NaN)));
         cult.setSelection(p.getString("farm_cultivation_mode","Konvensional / PHT").toLowerCase(Locale.US).contains("organik")?1:0);
-        weatherProvider.setSelection("WeatherAPI.com".equals(p.getString("weather_provider","Open-Meteo"))?1:0);
-        weatherApiKey.setText(p.getString("weatherapi_key", ""));
         for(int i=0;i<8;i++){
             fieldName[i].setText(p.getString("field_name_"+(i+1),""));
             fieldUnit[i].setText(p.getString("field_unit_"+(i+1),""));
@@ -87,10 +83,11 @@ public class SettingsActivity extends Activity {
         if(!Float.isNaN(lo)&&(lo<-180||lo>180)){lon.setError("Longitude -180..180");return;}
         android.content.SharedPreferences.Editor e=p.edit().putString("app_title",tv).putString("channel",channel.getText().toString().trim().isEmpty()?DEFAULT_CHANNEL:channel.getText().toString().trim())
                 .putString("read_key",readKey.getText().toString().trim().isEmpty()?DEFAULT_READ_KEY:readKey.getText().toString().trim())
+                .putString("ai_provider",aiProvider.getSelectedItem().toString())
                 .putString("ai_api_key",aiKey.getText().toString().trim()).putString("ai_model",aiModel.getText().toString().trim().isEmpty()?"gpt-6-luna":aiModel.getText().toString().trim())
-                .putString("crop",cv).putString("farm_cultivation_mode",cult.getSelectedItem().toString())
-                .putString("weather_provider",weatherProvider.getSelectedItemPosition()==1?"WeatherAPI.com":"Open-Meteo")
-                .putString("weatherapi_key",weatherApiKey.getText().toString().trim());
+                .putString("gemini_api_key",geminiKey.getText().toString().trim()).putString("gemini_model",geminiModel.getText().toString().trim().isEmpty()?"gemini-2.5-flash":geminiModel.getText().toString().trim())
+                .putString("openrouter_api_key",openRouterKey.getText().toString().trim()).putString("openrouter_model",openRouterModel.getText().toString().trim().isEmpty()?"openai/gpt-oss-20b:free":openRouterModel.getText().toString().trim())
+                .putString("crop",cv).putString("farm_cultivation_mode",cult.getSelectedItem().toString());
         if(!Float.isNaN(la))e.putFloat("latitude",la); else e.remove("latitude");
         if(!Float.isNaN(lo))e.putFloat("longitude",lo); else e.remove("longitude");
         if(!Float.isNaN(el))e.putFloat("elevation",el); else e.remove("elevation");
@@ -100,23 +97,6 @@ public class SettingsActivity extends Activity {
         }
         e.apply(); Toast.makeText(this,"Pengaturan tersimpan.",Toast.LENGTH_SHORT).show(); finish();
     }
-
-
-    private void requestGps(){
-        if(checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)!=PackageManager.PERMISSION_GRANTED && checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION)!=PackageManager.PERMISSION_GRANTED){requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION,Manifest.permission.ACCESS_COARSE_LOCATION},GPS_REQ);return;}
-        try{
-            LocationManager lm=(LocationManager)getSystemService(LOCATION_SERVICE);
-            String provider=lm.isProviderEnabled(LocationManager.GPS_PROVIDER)?LocationManager.GPS_PROVIDER:(lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)?LocationManager.NETWORK_PROVIDER:null);
-            if(provider==null){Toast.makeText(this,"Aktifkan Lokasi/GPS HP lalu coba lagi.",Toast.LENGTH_LONG).show();return;}
-            Toast.makeText(this,"Meminta koordinat GPS terbaru...",Toast.LENGTH_SHORT).show();
-            LocationListener listener=new LocationListener(){
-                @Override public void onLocationChanged(Location loc){lm.removeUpdates(this);lat.setText(String.format(Locale.US,"%.6f",loc.getLatitude()));lon.setText(String.format(Locale.US,"%.6f",loc.getLongitude()));p.edit().putFloat("latitude",(float)loc.getLatitude()).putFloat("longitude",(float)loc.getLongitude()).apply();Toast.makeText(SettingsActivity.this,"Koordinat baru terisi dan tersimpan. Tekan Simpan untuk mempertahankan pengaturan lainnya.",Toast.LENGTH_LONG).show();}
-                @Override public void onProviderDisabled(String x){} @Override public void onProviderEnabled(String x){} @Override public void onStatusChanged(String x,int y,android.os.Bundle z){}
-            };
-            lm.requestSingleUpdate(provider,listener,Looper.getMainLooper());
-        }catch(Exception e){Toast.makeText(this,"GPS gagal: "+e.getMessage(),Toast.LENGTH_LONG).show();}
-    }
-    @Override public void onRequestPermissionsResult(int requestCode,String[] permissions,int[] grantResults){super.onRequestPermissionsResult(requestCode,permissions,grantResults);if(requestCode==GPS_REQ){for(int g:grantResults)if(g==PackageManager.PERMISSION_GRANTED){requestGps();return;}Toast.makeText(this,"Izin lokasi diperlukan untuk mengambil GPS.",Toast.LENGTH_LONG).show();}}
 
     private float numOptional(String s){try{String t=s==null?"":s.trim();return t.isEmpty()?Float.NaN:Float.parseFloat(t.replace(',','.'));}catch(Exception ex){return Float.NaN;}}
     private void toggle(EditText e,TextView t){boolean visible=e.getInputType()==(InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);e.setInputType(InputType.TYPE_CLASS_TEXT|(visible?InputType.TYPE_TEXT_VARIATION_PASSWORD:InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD));t.setText(visible?"TAMPILKAN":"SEMBUNYIKAN");e.setSelection(e.length());}

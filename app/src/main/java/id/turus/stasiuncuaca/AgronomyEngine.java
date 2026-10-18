@@ -133,9 +133,22 @@ public final class AgronomyEngine {
     public static String classifyN(double value, double low, double high) {
         if (Double.isNaN(value)) return "Tidak ada data";
         if (!Double.isFinite(low) || !Double.isFinite(high) || low < 0 || high <= low) return classifyN(value);
-        if (value < low) return "Rendah";
-        if (value <= high) return "Sedang";
-        return "Tinggi";
+        // The user supplied low/high values define the middle band. To avoid
+        // inventing a laboratory-equivalent threshold, the outer classes are
+        // derived symmetrically from those screening thresholds.
+        double veryLow = low * 0.5;
+        double veryHigh = high + (high - low) * 0.5;
+        if (value < veryLow) return "Sangat Rendah (screening dari ambang N)";
+        if (value < low) return "Rendah (screening dari ambang N)";
+        if (value <= high) return "Sedang (screening dari ambang N)";
+        if (value <= veryHigh) return "Tinggi (screening dari ambang N)";
+        return "Sangat Tinggi (screening dari ambang N)";
+    }
+
+    private static String nutrientClass(String cls) {
+        if (cls == null) return "";
+        int p = cls.indexOf(" (");
+        return (p > 0 ? cls.substring(0,p) : cls).trim();
     }
 
     public static String classifyP(double value) { return classifyP(value, ""); }
@@ -566,9 +579,12 @@ public final class AgronomyEngine {
         if (nutrient.equals("N")) cls = classifyN(soilValue);
         else if (nutrient.equals("P")) cls = classifyP(soilValue);
         else cls = classifyK(soilValue);
-        if ("Rendah".equals(cls)) return "BELUM CUKUP / berpotensi membatasi fase ini";
-        if ("Sedang".equals(cls)) return "CUKUP SEMENTARA, tetapi sesuaikan dengan target hasil dan fase";
-        return "CUKUP–TINGGI; jangan menambah rutin tanpa dasar kebutuhan";
+        String simpleClass=nutrientClass(cls);
+        if ("Sangat Rendah".equals(simpleClass) || "Rendah".equals(simpleClass)) return "BELUM CUKUP / berpotensi membatasi fase ini";
+        if ("Sedang".equals(simpleClass)) return "CUKUP SEMENTARA, tetapi sesuaikan dengan target hasil dan fase";
+        if ("Tinggi".equals(simpleClass)) return "TINGGI; jangan menambah rutin tanpa dasar kebutuhan";
+        if ("Sangat Tinggi".equals(simpleClass)) return "SANGAT TINGGI; hentikan penambahan rutin unsur ini dan verifikasi dengan uji tanah/lab";
+        return "Belum dapat dinilai karena ambang/metode belum memadai";
     }
 
     public static String classifyVpd(double vpd) {
@@ -611,16 +627,23 @@ public final class AgronomyEngine {
     }
 
     public static double nutrientNeed(double soilValue, String nutrient, String crop, int hst, double recentCreditKgHa, double yieldTargetTPerHa, String method, double depthCm, double bulkDensityGcm3) {
+        return nutrientNeed(soilValue,nutrient,crop,hst,recentCreditKgHa,yieldTargetTPerHa,method,depthCm,bulkDensityGcm3,Double.NaN,Double.NaN);
+    }
+
+    public static double nutrientNeed(double soilValue, String nutrient, String crop, int hst, double recentCreditKgHa, double yieldTargetTPerHa, String method, double depthCm, double bulkDensityGcm3, double nLow, double nHigh) {
         CropProfile p=profile(crop);
         double seasonal=nutrient.equals("N")?p.seasonalN:(nutrient.equals("P")?p.seasonalP:p.seasonalK);
         double yieldScale=1.0;
         if (Double.isFinite(yieldTargetTPerHa) && yieldTargetTPerHa>0) yieldScale=Math.max(0.5,Math.min(1.8,yieldTargetTPerHa/Math.max(0.1,defaultYield(p))));
         double stageNeed=seasonal*stageFraction(hst,crop)*yieldScale;
         double support=0; String cls;
-        if (nutrient.equals("N")) cls=classifyN(soilValue); else if (nutrient.equals("P")) cls=classifyP(soilValue,method); else cls=classifyK(soilValue,method);
-        if ("Rendah".equals(cls)) support=0.20;
-        else if ("Sedang".equals(cls)) support=0.50;
-        else if ("Tinggi".equals(cls)) support=0.80;
+        if (nutrient.equals("N")) cls=classifyN(soilValue,nLow,nHigh); else if (nutrient.equals("P")) cls=classifyP(soilValue,method); else cls=classifyK(soilValue,method);
+        String simpleClass=nutrientClass(cls);
+        if ("Sangat Rendah".equals(simpleClass)) support=0.00;
+        else if ("Rendah".equals(simpleClass)) support=0.20;
+        else if ("Sedang".equals(simpleClass)) support=0.50;
+        else if ("Tinggi".equals(simpleClass)) support=0.80;
+        else if ("Sangat Tinggi".equals(simpleClass)) support=1.00;
         double gross=stageNeed*(1.0-support);
         double recovery=nutrient.equals("N")?0.50:(nutrient.equals("P")?0.30:0.60);
         double need=Math.max(0,gross/Math.max(0.1,recovery)-Math.max(0,recentCreditKgHa));

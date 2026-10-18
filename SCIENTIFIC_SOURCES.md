@@ -1,4 +1,4 @@
-# Pustaka ilmiah dan sumber teknis — v1.5.8
+# Pustaka ilmiah dan sumber teknis — v1.5.6
 
 ## Evapotranspirasi, air tanah, dan cuaca
 - Allen, R.G. et al. (1998), FAO Irrigation and Drainage Paper 56 (FAO-56): Penman–Monteith reference ET0, crop coefficient Kc, crop ET, TAW/RAW/available soil water.
@@ -71,16 +71,3 @@
 - Pusat Penelitian Kelapa Sawit (PPKS/IOPRI), layanan **Rekomendasi Pemupukan** untuk TBM dan TM. Deskripsi layanan menyatakan rekomendasi jenis/dosis/waktu aplikasi dilengkapi pengambilan dan analisis sampel tanah dan daun, evaluasi pertumbuhan, kultur teknis, serta saran perbaikan faktor pembatas: https://iopri.co.id/productGroup/detail/rekomendasi-pemupukan
 - Catatan implementasi aplikasi: pembacaan NPK dari sensor tanah USB 8-in-1/7-in-1 CWT diperlakukan sebagai skrining lapangan; bukan pengganti analisis laboratorium atau dasar tunggal untuk mengklaim dosis resmi PPKS. EC sensor (µS/cm) tidak otomatis dikonversi menjadi ECe.
 - Sensor tanah USB 8-in-1 yang dijual di pasaran dapat melaporkan N/P/K dalam mg/kg, pH, EC, suhu dan kelembapan; spesifikasi dan kalibrasi berbeda menurut model. Contoh dokumentasi teknis: https://www.niubol.com/id/sensor-pertanian/Portable-Type-C-USB-Soil-Multi-Parameter-Tester-15.html
-
-
-## Kelapa sawit — data lab dan ekspor hara panen (v1.5.8)
-- PPKS/IOPRI, layanan rekomendasi pemupukan: dosis TBM/TM mempertimbangkan analisis tanah dan daun serta evaluasi pertumbuhan/kultur teknis. https://iopri.co.id/productGroup/detail/rekomendasi-pemupukan
-- PPKS/IOPRI, layanan analisis laboratorium: daftar analisis daun mencakup N, P, K, Ca, Mg, B dan lainnya; analisis tanah mencakup pH, C-organik, N, P, K dapat ditukar, Ca, Mg, KTK dan lainnya. https://iopri.co.id/page/layanan-analisa-laboraturium
-- Behera et al., *Establishing optimal nutrient norms in leaf and soil for oil palm in India*, Industrial Crops and Products (2021), DOI 10.1016/j.indcrop.2021.114223. Nilai norma bergantung wilayah dan tidak boleh diterapkan sebagai ambang universal Indonesia. https://www.sciencedirect.com/science/article/pii/S0926669021009882
-- Estimasi ekspor hara TBS yang ditampilkan aplikasi memakai angka literatur yang dirujuk dalam artikel tersebut untuk hasil 25 t TBS/ha/tahun: N 93,5; P2O5 11; K2O 92,7; Ca 20,3; Mg 19,3 kg/ha/tahun, diskalakan linear berdasarkan hasil aktual. Angka ini hanya estimasi hara terangkut panen, bukan dosis pupuk atau rekomendasi resmi PPKS.
-
-## Model matematis kebutuhan hara kelapa sawit (pembaruan 1.5.8)
-- Farrasati, R. et al. (2026), *Quantifying plant nutrient requirements in oil palm*, European Journal of Agronomy 176, 128054. Artikel melaporkan estimasi kebutuhan input hara sekitar 4,82 kg N; 0,53 kg P; 5,95 kg K; dan 0,72 kg Mg per Mg TBS untuk mencapai sekitar 75% potensi hasil. Nilai digunakan aplikasi sebagai benchmark kebutuhan/input hara berbasis target hasil, bukan dosis produk pupuk siap-aplikasi. https://www.sciencedirect.com/science/article/pii/S1161030126000730
-- Seminar, K.B. et al. (2024), *PreciPalm: An Intelligent System for Calculating Macronutrient Status and Fertilizer Recommendations for Oil Palm on Mineral Soils Based on a Precision Agriculture Approach*, The Scientific World Journal, Article 1788726, DOI 10.1155/2024/1788726. Artikel menjelaskan pendekatan berbasis analisis daun dan dosis optimum menurut umur; contoh nilai kritis N 2,5%, P 0,15%, K 1,00% adalah patokan model penelitian, bukan ambang universal seluruh lokasi. https://onlinelibrary.wiley.com/doi/full/10.1155/2024/1788726
-- Goh, K.J. (2005), *Fertilizer recommendation systems for oil palm: estimating the fertilizer rates*. Sistem rekomendasi menggabungkan analisis daun/tanah, neraca hara, kebutuhan tanaman dan kehilangan; data tambahan dan aturan agronomi dibutuhkan untuk mengoptimalkan dosis. https://eurekamag.com/research/004/431/004431307.php
-- Model aplikasi menghitung benchmark hara dari hasil TBS dan menampilkan pemeriksaan status daun serta pembacaan sensor. Model sengaja tidak mengubah nilai sensor mg/kg menjadi dosis pupuk dan tidak menghitung dosis produk final tanpa kredit hara tanah, pupuk organik/pemupukan terdahulu, metode analisis dan efisiensi pemulihan yang tervalidasi.

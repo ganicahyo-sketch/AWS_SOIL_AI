@@ -5,10 +5,6 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.view.ViewGroup;
-import android.view.View;
-import android.graphics.drawable.GradientDrawable;
-import android.graphics.Typeface;
 import android.text.InputType;
 import android.view.Gravity;
 import android.widget.ArrayAdapter;
@@ -35,7 +31,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * Catatan Lapangan + mesin analisis agronomi v1.5.8.
+ * Catatan Lapangan + mesin analisis agronomi v1.5.6.
  *
  * Semua nilai CWT-7in1 (RS485/USB) dianggap benar sebagai input proyek.
  * Interpretasi tetap diberi label screening bila standar sangat tergantung
@@ -50,16 +46,12 @@ public class FieldNotesActivity extends Activity {
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.US);
     private SharedPreferences prefs;
 
-    private EditText date, time, crop, plantDate, hst, area, observation, action, targetYield, palmsPerHa, actualYield;
-    private EditText leafN, leafP, leafK, leafCa, leafMg, leafB, leafAnalysisDate;
-    private EditText labSoilN, labSoilP, labSoilK, labSoilCa, labSoilMg, labSoilCorg, soilAnalysisDate;
+    private EditText date, time, crop, plantDate, hst, area, observation, action, targetYield;
     private EditText soilPh, soilMoisture, soilTemp, soilEc, soilN, soilP, soilK, soilDepth, soilBulkDensity, soilFc, soilPwp, soilPhBuffer, soilAlDd, soilHDd, soilCec, soilOm, soilEce, soilLimeReq, soilNLow, soilNHigh;
     private Spinner soilTestMethod, ageUnit, dataSource, bulkDensityPreset;
     private EditText airTemp, airRh, pressure, rain24, et0, lux, par, sunHours, windSpeed;
     private Spinner noteType, severity, soilSource, windDirection, cultivation;
-    private TextView autoPhase, analysisView, timelineView, soilSummaryView, dataSourceStatus, usbSoilStatus;
-    private LinearLayout analysisCards;
-    private UsbSoilMeter usbSoilMeter;
+    private TextView autoPhase, analysisView, timelineView, soilSummaryView, dataSourceStatus;
     private final ExecutorService net = Executors.newSingleThreadExecutor();
 
     private static final String[] NOTE_TYPES = {
@@ -109,11 +101,6 @@ public class FieldNotesActivity extends Activity {
         observation = findViewById(R.id.fnObservation);
         action = findViewById(R.id.fnAction);
         targetYield = findViewById(R.id.fnTargetYield);
-        palmsPerHa = findViewById(R.id.fnPalmsPerHa); actualYield = findViewById(R.id.fnActualYield);
-        leafN=findViewById(R.id.fnLeafN); leafP=findViewById(R.id.fnLeafP); leafK=findViewById(R.id.fnLeafK);
-        leafCa=findViewById(R.id.fnLeafCa); leafMg=findViewById(R.id.fnLeafMg); leafB=findViewById(R.id.fnLeafB); leafAnalysisDate=findViewById(R.id.fnLeafAnalysisDate);
-        labSoilN=findViewById(R.id.fnLabSoilN); labSoilP=findViewById(R.id.fnLabSoilP); labSoilK=findViewById(R.id.fnLabSoilK);
-        labSoilCa=findViewById(R.id.fnLabSoilCa); labSoilMg=findViewById(R.id.fnLabSoilMg); labSoilCorg=findViewById(R.id.fnLabSoilCorg); soilAnalysisDate=findViewById(R.id.fnSoilAnalysisDate);
 
         soilPh = findViewById(R.id.fnSoilPh);
         soilMoisture = findViewById(R.id.fnSoilMoisture);
@@ -139,7 +126,6 @@ public class FieldNotesActivity extends Activity {
         dataSource = findViewById(R.id.fnDataSource);
         bulkDensityPreset = findViewById(R.id.fnBulkDensityPreset);
         dataSourceStatus = findViewById(R.id.fnDataSourceStatus);
-        usbSoilStatus = findViewById(R.id.fnUsbSoilStatus);
 
         airTemp = findViewById(R.id.fnAirTemp);
         airRh = findViewById(R.id.fnAirRh);
@@ -159,8 +145,6 @@ public class FieldNotesActivity extends Activity {
 
         autoPhase = findViewById(R.id.fnAutoPhase);
         analysisView = findViewById(R.id.fnAnalysis);
-        analysisCards = findViewById(R.id.fnAnalysisCards);
-        if (analysisView != null) { analysisView.setTextSize(16); analysisView.setLineSpacing(dp(6), 1.10f); analysisView.setVisibility(View.GONE); }
         timelineView = findViewById(R.id.fnTimeline);
         soilSummaryView = findViewById(R.id.fnSoilSummary);
 
@@ -195,11 +179,6 @@ public class FieldNotesActivity extends Activity {
         String savedAgeValue=prefs.getString("farm_age_value", ""); if (!savedAgeValue.isEmpty()) hst.setText(savedAgeValue);
         selectSpinner(ageUnit,prefs.getString("farm_age_unit","HST / hari"));
         targetYield.setText(prefs.getString("farm_target_yield_t_ha", ""));
-        palmsPerHa.setText(prefs.getString("farm_palms_per_ha", "")); actualYield.setText(prefs.getString("farm_actual_yield_t_ha", ""));
-        leafN.setText(prefs.getString("palm_leaf_n_pct", "")); leafP.setText(prefs.getString("palm_leaf_p_pct", "")); leafK.setText(prefs.getString("palm_leaf_k_pct", ""));
-        leafCa.setText(prefs.getString("palm_leaf_ca_pct", "")); leafMg.setText(prefs.getString("palm_leaf_mg_pct", "")); leafB.setText(prefs.getString("palm_leaf_b_mg_kg", "")); leafAnalysisDate.setText(prefs.getString("palm_leaf_analysis_date", ""));
-        labSoilN.setText(prefs.getString("palm_lab_soil_n_pct", "")); labSoilP.setText(prefs.getString("palm_lab_soil_p_mg_kg", "")); labSoilK.setText(prefs.getString("palm_lab_soil_k_cmol_kg", ""));
-        labSoilCa.setText(prefs.getString("palm_lab_soil_ca_cmol_kg", "")); labSoilMg.setText(prefs.getString("palm_lab_soil_mg_cmol_kg", "")); labSoilCorg.setText(prefs.getString("palm_lab_soil_c_org_pct", "")); soilAnalysisDate.setText(prefs.getString("palm_soil_analysis_date", ""));
         soilPh.setText(prefs.getString("soil_ph", ""));
         soilMoisture.setText(prefs.getString("soil_moisture_pct", ""));
         soilEc.setText(prefs.getString("soil_ec_us_cm", ""));
@@ -234,19 +213,8 @@ public class FieldNotesActivity extends Activity {
         findViewById(R.id.fnAddOpt).setOnClickListener(v -> showOptDialog(prefs));
         findViewById(R.id.fnAnalyze).setOnClickListener(v -> runAnalysis(prefs));
         findViewById(R.id.fnAutoFill).setOnClickListener(v -> applyAutomaticData(prefs));
-        findViewById(R.id.fnUsbSoilScan).setOnClickListener(v -> {
-            if (usbSoilMeter != null) usbSoilMeter.scanNow();
-            else usbSoilStatus.setText("Pemindai USB sedang disiapkan…");
-        });
         findViewById(R.id.fnManageHistory).setOnClickListener(v -> showHistoryManager(prefs));
         findViewById(R.id.fnNotes).setOnClickListener(v -> showMethodNotes());
-        final android.view.View palmLabCard = findViewById(R.id.fnPalmLabCard);
-        final TextView palmLabToggle = findViewById(R.id.fnPalmLabToggle);
-        palmLabToggle.setOnClickListener(v -> {
-            boolean show = palmLabCard.getVisibility() != android.view.View.VISIBLE;
-            palmLabCard.setVisibility(show ? android.view.View.VISIBLE : android.view.View.GONE);
-            palmLabToggle.setText(show ? "－ Sembunyikan data laboratorium sawit" : "＋ Data laboratorium sawit (daun & tanah) — opsional");
-        });
         dataSource.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override public void onItemSelected(AdapterView<?> parent, android.view.View view, int position, long id) {
                 prefs.edit().putString("agro_data_source", DATA_SOURCES[position]).apply();
@@ -269,51 +237,6 @@ public class FieldNotesActivity extends Activity {
         refreshViews(prefs);
         // Gunakan cache bila tersedia; tombol "AMBIL DATA TERBARU" melakukan refresh jaringan.
         applyAutomaticDataFromCache(prefs);
-        usbSoilMeter = new UsbSoilMeter(this, new UsbSoilMeter.Listener() {
-            @Override public void onStatus(String status) {
-                if (usbSoilStatus != null) usbSoilStatus.setText(status);
-            }
-            @Override public void onValues(UsbSoilMeter.Values v) {
-                soilMoisture.setText(String.format(Locale.US, "%.1f", v.moisturePct));
-                soilTemp.setText(String.format(Locale.US, "%.1f", v.temperatureC));
-                soilEc.setText(String.format(Locale.US, "%.0f", v.ecUsCm));
-                soilPh.setText(String.format(Locale.US, "%.1f", v.ph));
-                soilN.setText(String.format(Locale.US, "%.0f", v.nitrogen));
-                soilP.setText(String.format(Locale.US, "%.0f", v.phosphorus));
-                soilK.setText(String.format(Locale.US, "%.0f", v.potassium));
-                selectSpinner(soilSource, SOIL_SOURCE[3]);
-                prefs.edit()
-                    .putString("soil_moisture_pct", soilMoisture.getText().toString())
-                    .putString("soil_temp_c", soilTemp.getText().toString())
-                    .putString("soil_ec_us_cm", soilEc.getText().toString())
-                    .putString("soil_ph", soilPh.getText().toString())
-                    .putString("soil_n", soilN.getText().toString())
-                    .putString("soil_p", soilP.getText().toString())
-                    .putString("soil_k", soilK.getText().toString())
-                    .putString("soil_source", SOIL_SOURCE[3]).apply();
-                soilSummaryView.setText(buildSoilSummary());
-                if (usbSoilStatus != null) usbSoilStatus.setText("USB 8-in-1 aktif • M=" + String.format(Locale.US, "%.1f", v.moisturePct)
-                    + "% • T=" + String.format(Locale.US, "%.1f", v.temperatureC) + "°C • EC="
-                    + String.format(Locale.US, "%.0f", v.ecUsCm) + " µS/cm • fertility="
-                    + String.format(Locale.US, "%.0f", v.fertility) + ". Pemetaan register generik; verifikasi satuan dengan manual alat.");
-            }
-        });
-    }
-
-
-    @Override protected void onStart() {
-        super.onStart();
-        if (usbSoilMeter != null) usbSoilMeter.start();
-    }
-
-    @Override protected void onStop() {
-        if (usbSoilMeter != null) usbSoilMeter.stop();
-        super.onStop();
-    }
-
-    @Override protected void onDestroy() {
-        if (usbSoilMeter != null) usbSoilMeter.dispose();
-        super.onDestroy();
     }
 
     private void vpdFromOpenMeteo() {
@@ -383,9 +306,6 @@ public class FieldNotesActivity extends Activity {
             o.put("plantingDate", plantDate.getText().toString().trim());
             putTextNumber(o, "hst", hst);
             putTextNumber(o, "targetYieldTHa", targetYield);
-            putTextNumber(o, "palmsPerHa", palmsPerHa); putTextNumber(o, "actualYieldTHa", actualYield);
-            putTextNumber(o, "leafNPercent", leafN); putTextNumber(o, "leafPPercent", leafP); putTextNumber(o, "leafKPercent", leafK); putTextNumber(o, "leafCaPercent", leafCa); putTextNumber(o, "leafMgPercent", leafMg); putTextNumber(o, "leafBmgKg", leafB); o.put("leafAnalysisDate", leafAnalysisDate.getText().toString().trim());
-            putTextNumber(o, "labSoilNPercent", labSoilN); putTextNumber(o, "labSoilPmgKg", labSoilP); putTextNumber(o, "labSoilKcmolKg", labSoilK); putTextNumber(o, "labSoilCacmolKg", labSoilCa); putTextNumber(o, "labSoilMgcmolKg", labSoilMg); putTextNumber(o, "labSoilCOrgPercent", labSoilCorg); o.put("soilAnalysisDate", soilAnalysisDate.getText().toString().trim());
             putTextNumber(o, "areaHa", area);
             o.put("phase", agePhase());
             o.put("type", noteType.getSelectedItem().toString());
@@ -433,9 +353,6 @@ public class FieldNotesActivity extends Activity {
                     .putString("farm_planting_date", plantDate.getText().toString().trim())
                     .putString("farm_hst", String.valueOf(currentHst())).putString("farm_age_value", hst.getText().toString().trim()).putString("farm_age_unit", ageUnit.getSelectedItem().toString())
                     .putString("farm_target_yield_t_ha", targetYield.getText().toString().trim())
-                    .putString("farm_palms_per_ha", palmsPerHa.getText().toString().trim()).putString("farm_actual_yield_t_ha", actualYield.getText().toString().trim())
-                    .putString("palm_leaf_n_pct",leafN.getText().toString().trim()).putString("palm_leaf_p_pct",leafP.getText().toString().trim()).putString("palm_leaf_k_pct",leafK.getText().toString().trim()).putString("palm_leaf_ca_pct",leafCa.getText().toString().trim()).putString("palm_leaf_mg_pct",leafMg.getText().toString().trim()).putString("palm_leaf_b_mg_kg",leafB.getText().toString().trim()).putString("palm_leaf_analysis_date",leafAnalysisDate.getText().toString().trim())
-                    .putString("palm_lab_soil_n_pct",labSoilN.getText().toString().trim()).putString("palm_lab_soil_p_mg_kg",labSoilP.getText().toString().trim()).putString("palm_lab_soil_k_cmol_kg",labSoilK.getText().toString().trim()).putString("palm_lab_soil_ca_cmol_kg",labSoilCa.getText().toString().trim()).putString("palm_lab_soil_mg_cmol_kg",labSoilMg.getText().toString().trim()).putString("palm_lab_soil_c_org_pct",labSoilCorg.getText().toString().trim()).putString("palm_soil_analysis_date",soilAnalysisDate.getText().toString().trim())
                     .putString("soil_ph", soilPh.getText().toString().trim())
                     .putString("soil_moisture_pct", soilMoisture.getText().toString().trim())
                     .putString("soil_ec_us_cm", soilEc.getText().toString().trim())
@@ -947,7 +864,7 @@ public class FieldNotesActivity extends Activity {
             s.append("Kelembapan tanah: ").append(show(moist)).append(" % → ").append(AgronomyEngine.classifyMoisture(moist, c)).append("\n");
             if (!Double.isNaN(st)) s.append("Suhu tanah: ").append(show(st)).append(" °C\n");
 
-            double nNeed = AgronomyEngine.nutrientNeed(n, "N", c, days, credit[0], targetYieldValue, methodName, depth, bd);
+            double nNeed = AgronomyEngine.nutrientNeed(n, "N", c, days, credit[0], targetYieldValue, methodName, depth, bd, nLow, nHigh);
             double pNeed = AgronomyEngine.nutrientNeed(pp, "P", c, days, credit[1], targetYieldValue, methodName, depth, bd);
             double kNeed = AgronomyEngine.nutrientNeed(k, "K", c, days, credit[2], targetYieldValue, methodName, depth, bd);
             s.append("\n2. ANALISIS RENTANG SEMUA PARAMETER\n");
@@ -1008,122 +925,13 @@ public class FieldNotesActivity extends Activity {
             s.append("• EC sensor: gunakan sebagai parameter input utama dengan rentang operasional; ECe lab hanya pembanding bila tersedia.\n");
 
             String compact = compactAnalysis(s.toString());
-            renderFieldAnalysisCards(compact);
-            // Keep the original technical report in preferences for PDF/AI compatibility.
+            analysisView.setText(compact);
             prefs.edit().putString("last_field_analysis", compact).apply();
             soilSummaryView.setText(buildSoilSummary());
             timelineView.setText(buildTimeline(prefs, c));
         } catch (Exception ex) {
-            renderFieldAnalysisError("Analisis belum berhasil dihitung. Periksa kembali data yang diisi. Rincian: " + (ex.getMessage() == null ? "data belum lengkap" : ex.getMessage()));
+            analysisView.setText("Analisis gagal dihitung: " + (ex.getMessage() == null ? "data belum lengkap" : ex.getMessage()));
         }
-    }
-
-    /** Show the same measured/calculated values in spacious sections for non-technical readers. */
-    private void renderFieldAnalysisCards(String raw) {
-        if (analysisCards == null) { analysisView.setVisibility(View.VISIBLE); analysisView.setText(styleFieldAnalysis(raw)); return; }
-        analysisView.setVisibility(View.GONE); analysisCards.setVisibility(View.VISIBLE); analysisCards.removeAllViews();
-        String[] lines = (raw == null ? "" : raw).split("\\r?\\n");
-        TextView title = new TextView(this);
-        title.setText("HASIL ANALISIS KEBUN"); title.setTextColor(0xFF29C6C7); title.setTextSize(20);
-        title.setTypeface(Typeface.DEFAULT, Typeface.BOLD); title.setLineSpacing(dp(3), 1.06f); title.setPadding(dp(2), dp(4), dp(2), dp(6));
-        analysisCards.addView(title, cardWidth());
-        StringBuilder profile = new StringBuilder(); int i = 0;
-        if (lines.length > 0) i = 1; // the technical title is replaced by the plain-language title above
-        for (; i < lines.length; i++) {
-            String line = lines[i].trim(); if (isFieldAnalysisHeader(line)) break;
-            if (!line.isEmpty()) profile.append(friendlyFieldLine(line)).append('\n');
-        }
-        if (profile.length() > 0) addFieldAnalysisCard("RINGKASAN TANAMAN DAN KEBUN", profile.toString().trim(), false, false);
-        addFieldAnalysisNote("Cara membaca: lihat saran tindakan terlebih dahulu. Data sensor adalah hasil pembacaan alat; kata ‘perkiraan’ berarti hasil hitungan, bukan hasil laboratorium. Jika data belum lengkap, hasil perlu diperiksa kembali.");
-        java.util.LinkedHashMap<String, ArrayList<String>> sections = new java.util.LinkedHashMap<>();
-        String heading = null; ArrayList<String> body = new ArrayList<>();
-        for (; i < lines.length; i++) {
-            String line = lines[i].trim();
-            if (isFieldAnalysisHeader(line)) { if (heading != null) sections.put(heading, body); heading = line; body = new ArrayList<>(); }
-            else if (!line.isEmpty()) body.add(friendlyFieldLine(line));
-        }
-        if (heading != null) sections.put(heading, body);
-        ArrayList<String> ordered = new ArrayList<>(sections.keySet());
-        java.util.Collections.sort(ordered, (a, b) -> Integer.compare(fieldSectionOrder(a), fieldSectionOrder(b)));
-        for (String h : ordered) {
-            String upper = h.toUpperCase(Locale.ROOT);
-            addFieldAnalysisCard(friendlyFieldHeading(h), joinFieldLines(sections.get(h)), upper.contains("REKOMENDASI"), upper.contains("DASAR ILMIAH"));
-        }
-    }
-
-    private boolean isFieldAnalysisHeader(String line) { return line != null && line.matches("^[1-9]\\. .+"); }
-    private int fieldSectionOrder(String heading) {
-        String h = heading.toUpperCase(Locale.ROOT);
-        if (h.contains("REKOMENDASI")) return 0;
-        if (h.contains("STATUS TANAH")) return 10;
-        if (h.contains("KECUKUPAN NPK") || h.contains("DOSIS FASE")) return 20;
-        if (h.contains("AIR,") || h.contains("CUACA")) return 30;
-        if (h.contains("PREDIKSI POTENSI OPT")) return 40;
-        if (h.contains("CATATAN LAPANGAN")) return 50;
-        if (h.contains("ANALISIS RENTANG")) return 60;
-        if (h.contains("DASAR ILMIAH")) return 90;
-        return 70;
-    }
-    private String friendlyFieldHeading(String input) {
-        String value = input.replaceFirst("^[0-9]+\\.\\s*", "").trim(); String h = value.toUpperCase(Locale.ROOT);
-        if (h.contains("STATUS TANAH")) return "KONDISI TANAH";
-        if (h.contains("ANALISIS RENTANG")) return "PEMERIKSAAN DATA LAINNYA";
-        if (h.contains("KECUKUPAN NPK") || h.contains("DOSIS FASE")) return "PERKIRAAN KEBUTUHAN PUPUK";
-        if (h.contains("AIR,") || h.contains("CUACA")) return "CUACA DAN KEBUTUHAN AIR";
-        if (h.contains("PREDIKSI POTENSI OPT")) return "WASPADA HAMA DAN PENYAKIT";
-        if (h.contains("CATATAN LAPANGAN")) return "CATATAN KEBUN";
-        if (h.contains("REKOMENDASI MENYELURUH")) return "SARAN TINDAKAN UNTUK PETANI";
-        if (h.contains("DASAR ILMIAH")) return "CATATAN DAN SUMBER PERHITUNGAN";
-        return value;
-    }
-    private String friendlyFieldLine(String input) {
-        if (input == null) return ""; String v = input.trim();
-        String[][] r = {
-            {"Budidaya:", "Cara budidaya:"}, {"Fase:", "Tahap tanaman:"}, {"HST ", "hari setelah tanam (HST) "},
-            {"pH-buffer", "uji penyangga pH"}, {"Al-dd", "aluminium tanah (Al-dd)"}, {"H-dd", "keasaman cadangan (H-dd)"},
-            {"CEC", "kemampuan tanah menahan hara (KTK)"}, {"bulk density", "berat isi tanah"},
-            {"Stok lapisan", "Perkiraan hara pada lapisan tanah"}, {"N tersedia", "Nitrogen (N) tersedia"},
-            {"P tersedia", "Fosfor (P) tersedia"}, {"K tersedia", "Kalium (K) tersedia"},
-            {"N-total diprediksi dari N tersedia", "Perkiraan N total dari N tersedia (bukan hasil laboratorium)"},
-            {"Kelas N-total yang mungkin", "Perkiraan kelompok N total"}, {"ECe laboratorium", "ECe hasil laboratorium"},
-            {"EC sensor", "EC dari sensor tanah"}, {"FC/PWP", "batas ketersediaan air tanah (FC/PWP)"},
-            {"Kebutuhan screening fase ini", "Perkiraan kebutuhan hara tahap ini"}, {"Kredit pupuk tercatat 90 hari", "Perkiraan hara dari pupuk yang tercatat selama 90 hari terakhir"},
-            {"P2O5", "P₂O₅"}, {"K2O", "K₂O"}, {"RH", "kelembapan udara (RH)"},
-            {"VPD", "tekanan udara kering bagi tanaman (VPD)"}, {"ET0", "perkiraan kebutuhan air dari cuaca (ET0)"},
-            {"screening", "perkiraan awal"}, {"STCR-style", "model perkiraan kebutuhan hara"}, {"OPT", "hama/penyakit (OPT)"},
-            {"kg/ha", "kg/ha (kilogram per hektare)"}, {"→", " — "}
-        };
-        for (String[] p : r) v = v.replace(p[0], p[1]);
-        v = v.replace("; ", ";\n• ");
-        return v;
-    }
-    private String joinFieldLines(ArrayList<String> lines) { StringBuilder out = new StringBuilder(); if (lines != null) for (String l : lines) { if (l == null || l.trim().isEmpty()) continue; if (out.length() > 0) out.append('\n'); out.append(l.trim()); } return out.toString(); }
-    private void addFieldAnalysisCard(String heading, String body, boolean priority, boolean technical) {
-        LinearLayout card = new LinearLayout(this); card.setOrientation(LinearLayout.VERTICAL); card.setPadding(dp(13), dp(12), dp(13), dp(12));
-        card.setBackground(fieldRoundBg(technical ? 0xFF102B3C : 0xFF122B3B, technical ? 0xFF244353 : 0xFF214457));
-        LinearLayout.LayoutParams lp = cardWidth(); lp.topMargin = dp(9); analysisCards.addView(card, lp);
-        TextView title = new TextView(this); title.setText(heading); title.setTextColor(priority ? 0xFFFFD479 : 0xFF29C6C7); title.setTextSize(17); title.setTypeface(Typeface.DEFAULT, Typeface.BOLD); title.setLineSpacing(dp(2), 1.04f); title.setPadding(0, 0, 0, dp(7)); card.addView(title, cardWidth());
-        if (technical) addFieldBody(card, "Bagian ini berisi informasi tambahan. Utamakan bagian saran tindakan di atas.", false);
-        if (body == null || body.trim().isEmpty()) { addFieldBody(card, "Belum ada informasi yang cukup untuk bagian ini.", false); return; }
-        for (String rawLine : body.split("\\n")) { String text = rawLine.trim(); if (text.isEmpty()) continue; boolean bullet = text.startsWith("•") || text.startsWith("-"); if (bullet) text = text.replaceFirst("^[•-]\\s*", ""); addFieldBody(card, text, bullet); }
-    }
-    private void addFieldAnalysisNote(String text) {
-        LinearLayout card = new LinearLayout(this); card.setOrientation(LinearLayout.VERTICAL); card.setPadding(dp(12), dp(10), dp(12), dp(10)); card.setBackground(fieldRoundBg(0xFF173546, 0xFF3E5A67));
-        LinearLayout.LayoutParams lp = cardWidth(); lp.topMargin = dp(7); analysisCards.addView(card, lp);
-        TextView title = new TextView(this); title.setText("PENTING UNTUK DIBACA"); title.setTextColor(0xFFFFD479); title.setTextSize(14); title.setTypeface(Typeface.DEFAULT, Typeface.BOLD); card.addView(title, cardWidth()); addFieldBody(card, text, false);
-    }
-    private void addFieldBody(LinearLayout parent, String text, boolean bullet) {
-        LinearLayout row = new LinearLayout(this); row.setOrientation(LinearLayout.HORIZONTAL); row.setGravity(Gravity.TOP); LinearLayout.LayoutParams lp = cardWidth(); lp.topMargin = dp(3); lp.bottomMargin = dp(5); parent.addView(row, lp);
-        if (bullet) { TextView dot = new TextView(this); dot.setText("•"); dot.setTextColor(0xFF45D483); dot.setTextSize(17); dot.setTypeface(Typeface.DEFAULT, Typeface.BOLD); dot.setPadding(0, 0, dp(8), 0); row.addView(dot, new LinearLayout.LayoutParams(dp(18), -2)); }
-        TextView tv = new TextView(this); tv.setText(text); tv.setTextColor(0xFFF0F4F6); tv.setTextSize(15.5f); tv.setLineSpacing(dp(5), 1.08f); tv.setIncludeFontPadding(true); row.addView(tv, new LinearLayout.LayoutParams(0, -2, 1f));
-    }
-    private GradientDrawable fieldRoundBg(int color, int stroke) { GradientDrawable bg = new GradientDrawable(); bg.setColor(color); bg.setCornerRadius(dp(13)); bg.setStroke(dp(1), stroke); return bg; }
-    private LinearLayout.LayoutParams cardWidth() { return new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT); }
-    private CharSequence styleFieldAnalysis(String text) { android.text.SpannableString out = new android.text.SpannableString(text == null ? "" : text); if (out.length() > 0) { out.setSpan(new android.text.style.StyleSpan(Typeface.BOLD), 0, Math.min(out.length(), 22), android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE); } return out; }
-    private void renderFieldAnalysisError(String message) {
-        if (analysisView != null) analysisView.setVisibility(View.GONE);
-        if (analysisCards == null) { if (analysisView != null) { analysisView.setVisibility(View.VISIBLE); analysisView.setText(message); } return; }
-        analysisCards.removeAllViews(); analysisCards.setVisibility(View.VISIBLE); addFieldAnalysisCard("ANALISIS BELUM BERHASIL", message, true, false);
     }
 
     private void appendRecommendations(StringBuilder s, String c, AgronomyEngine.CropProfile p,
@@ -1134,9 +942,9 @@ public class FieldNotesActivity extends Activity {
         if (!Double.isNaN(ec) && ec / 1000.0 > p.ecThresholdDsM) s.append("• EC tinggi: kurangi pupuk pekat sekali aplikasi, periksa kualitas air, drainase, dan lakukan pemantauan ulang setelah hujan/irigasi.\n");
         if (!Double.isNaN(moist) && moist < 20) s.append("• Tanah kering: prioritaskan pemenuhan air sebelum memberi pupuk larut, lalu cek ulang kelembapan.\n");
         if (!Double.isNaN(moist) && moist > 85) s.append("• Tanah terlalu lembap: cek drainase dan tunda pupuk yang mudah hilang sampai kondisi memungkinkan.\n");
-        if (!Double.isNaN(n) && AgronomyEngine.classifyN(n,nLow,nHigh).equals("Rendah")) s.append("• N rendah: utamakan sumber N yang sesuai fase dan bagi aplikasi agar efisiensi lebih baik.\n");
-        if (!Double.isNaN(pp) && AgronomyEngine.classifyP(pp,methodName).equals("Tinggi")) s.append("• P tinggi: jangan menambah P secara rutin; fokuskan dosis pada unsur yang memang kurang.\n");
-        if (!Double.isNaN(k) && AgronomyEngine.classifyK(k,methodName).equals("Tinggi")) s.append("• K tinggi: jangan menambah K tanpa bukti kebutuhan; K dapat mengalami luxury consumption.\n");
+        if (!Double.isNaN(n) && AgronomyEngine.classifyN(n,nLow,nHigh).startsWith("Rendah")) s.append("• N rendah: utamakan sumber N yang sesuai fase dan bagi aplikasi agar efisiensi lebih baik.\n");
+        if (!Double.isNaN(pp) && AgronomyEngine.classifyP(pp,methodName).startsWith("Tinggi")) s.append("• P tinggi: jangan menambah P secara rutin; fokuskan dosis pada unsur yang memang kurang.\n");
+        if (!Double.isNaN(k) && AgronomyEngine.classifyK(k,methodName).startsWith("Tinggi")) s.append("• K tinggi: jangan menambah K tanpa bukti kebutuhan; K dapat mengalami luxury consumption.\n");
         if (!Double.isNaN(vpd) && vpd > 2.0) s.append("• VPD tinggi: pantau layu; bila air tersedia, pertahankan kelembapan zona akar dan lakukan aplikasi pupuk pada waktu lebih sejuk.\n");
         if (!Double.isNaN(rain) && !Double.isNaN(e0) && rain < e0) s.append("• Air masuk < kebutuhan atmosfer: cek cadangan air tanah sebelum menetapkan irigasi.\n");
         if (!Double.isNaN(rh) && rh > 90 && !Double.isNaN(rain) && rain > 5) s.append("• RH + hujan tinggi: jadwalkan scouting penyakit lebih rapat; utamakan sanitasi, sirkulasi udara, dan PHT.\n");

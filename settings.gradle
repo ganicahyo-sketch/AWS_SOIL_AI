@@ -11,10 +11,8 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        // USB serial driver is published through JitPack, not Google Maven or Maven Central.
-        maven { url 'https://jitpack.io' }
     }
 }
 
-rootProject.name = 'STASIUN-CUACA-SAWIT-v1.5.8'
+rootProject.name = 'SIM-TANI-v1.5.8'
 include ':app'

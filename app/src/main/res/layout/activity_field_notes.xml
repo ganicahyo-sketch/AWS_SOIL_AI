@@ -32,7 +32,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="v1.5.8 • SAWIT • OPEN-METEO + AGRONOMI • TANAH • PUPUK • OPT"
+                android:text="v1.5.6 • OPEN-METEO + AGRONOMI • TANAH • PUPUK • OPT"
                 android:textColor="@color/cyan"
                 android:textSize="14sp"
                 android:letterSpacing="0.08"/>
@@ -187,9 +187,6 @@
                     android:textColorHint="@color/text_muted"
                     android:singleLine="true"/>
 
-                <EditText android:id="@+id/fnPalmsPerHa" android:layout_width="match_parent" android:layout_height="48dp" android:hint="Khusus sawit: populasi pokok produktif (pokok/ha)" android:inputType="numberDecimal" android:textColor="@color/text_main" android:textColorHint="@color/text_muted" android:singleLine="true"/>
-                <EditText android:id="@+id/fnActualYield" android:layout_width="match_parent" android:layout_height="48dp" android:hint="Khusus sawit: produktivitas aktual TBS (ton/ha/tahun)" android:inputType="numberDecimal" android:textColor="@color/text_main" android:textColorHint="@color/text_muted" android:singleLine="true"/>
-
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -226,7 +223,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="2. SENSOR TANAH CWT-7IN1 / USB 8-IN-1"
+                    android:text="2. SENSOR TANAH CWT-7IN1"
                     android:textColor="@color/cyan"
                     android:textStyle="bold"
                     android:textSize="15sp"/>
@@ -234,7 +231,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="USB 8-in-1 CH340/CH34x dideteksi otomatis. Nilai sensor diisi ke kolom di bawah; RS485 dan input manual tetap tersedia."
+                    android:text="RS485 dan USB memakai parameter yang sama. Nilai sensor dianggap benar dan dipakai sebagai input analisis."
                     android:textColor="@color/text_muted"
                     android:textSize="14sp"
                     android:layout_marginTop="4dp"/>
@@ -251,26 +248,6 @@
                     android:id="@+id/fnSoilSource"
                     android:layout_width="match_parent"
                     android:layout_height="48dp"/>
-
-                <TextView
-                    android:id="@+id/fnUsbSoilStatus"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="5dp"
-                    android:text="USB Soil Meter 8-in-1: mencari perangkat saat USB/OTG terhubung…"
-                    android:textColor="@color/text_muted"
-                    android:textSize="13sp"/>
-
-                <TextView
-                    android:id="@+id/fnUsbSoilScan"
-                    android:layout_width="match_parent"
-                    android:layout_height="44dp"
-                    android:layout_marginTop="6dp"
-                    android:gravity="center"
-                    android:text="DETEKSI / BACA USB SOIL METER"
-                    android:textColor="@color/navy_950"
-                    android:textStyle="bold"
-                    android:background="@drawable/bg_button"/>
 
                 <TextView
                     android:layout_width="match_parent"
@@ -420,38 +397,6 @@
                     android:textSize="15sp"/>
             </LinearLayout>
 
-            <TextView
-                android:id="@+id/fnPalmLabToggle"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:layout_marginTop="10dp"
-                android:gravity="center_vertical"
-                android:paddingStart="14dp"
-                android:paddingEnd="14dp"
-                android:text="＋ Data laboratorium sawit (daun &amp; tanah) — opsional"
-                android:textColor="@color/cyan"
-                android:textStyle="bold"
-                android:background="@drawable/bg_chip" />
-
-            <LinearLayout android:id="@+id/fnPalmLabCard" android:visibility="gone" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:orientation="vertical" android:background="@drawable/bg_panel" android:padding="14dp">
-                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="DATA LAB KHUSUS KELAPA SAWIT" android:textColor="@color/cyan" android:textStyle="bold" android:textSize="15sp"/>
-                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:text="Isi sesuai lembar hasil laboratorium. Parameter kosong akan dilewati; jangan memasukkan angka sensor ke kolom hasil lab." android:textColor="@color/text_muted" android:textSize="13sp"/>
-                <EditText android:id="@+id/fnLeafAnalysisDate" android:layout_width="match_parent" android:layout_height="48dp" android:hint="Tanggal analisis daun YYYY-MM-DD" android:textColor="@color/text_main" android:textColorHint="@color/text_muted" android:singleLine="true"/>
-                <EditText android:id="@+id/fnLeafN" android:layout_width="match_parent" android:layout_height="48dp" android:hint="Daun: N (%) bahan kering" android:inputType="numberDecimal" android:textColor="@color/text_main" android:textColorHint="@color/text_muted" android:singleLine="true"/>
-                <EditText android:id="@+id/fnLeafP" android:layout_width="match_parent" android:layout_height="48dp" android:hint="Daun: P (%) bahan kering" android:inputType="numberDecimal" android:textColor="@color/text_main" android:textColorHint="@color/text_muted" android:singleLine="true"/>
-                <EditText android:id="@+id/fnLeafK" android:layout_width="match_parent" android:layout_height="48dp" android:hint="Daun: K (%) bahan kering" android:inputType="numberDecimal" android:textColor="@color/text_main" android:textColorHint="@color/text_muted" android:singleLine="true"/>
-                <EditText android:id="@+id/fnLeafCa" android:layout_width="match_parent" android:layout_height="48dp" android:hint="Daun: Ca (%) bahan kering" android:inputType="numberDecimal" android:textColor="@color/text_main" android:textColorHint="@color/text_muted" android:singleLine="true"/>
-                <EditText android:id="@+id/fnLeafMg" android:layout_width="match_parent" android:layout_height="48dp" android:hint="Daun: Mg (%) bahan kering" android:inputType="numberDecimal" android:textColor="@color/text_main" android:textColorHint="@color/text_muted" android:singleLine="true"/>
-                <EditText android:id="@+id/fnLeafB" android:layout_width="match_parent" android:layout_height="48dp" android:hint="Daun: B (mg/kg atau ppm)" android:inputType="numberDecimal" android:textColor="@color/text_main" android:textColorHint="@color/text_muted" android:singleLine="true"/>
-                <EditText android:id="@+id/fnSoilAnalysisDate" android:layout_width="match_parent" android:layout_height="48dp" android:hint="Tanggal analisis tanah YYYY-MM-DD" android:textColor="@color/text_main" android:textColorHint="@color/text_muted" android:singleLine="true"/>
-                <EditText android:id="@+id/fnLabSoilN" android:layout_width="match_parent" android:layout_height="48dp" android:hint="Tanah lab: N-total (%)" android:inputType="numberDecimal" android:textColor="@color/text_main" android:textColorHint="@color/text_muted" android:singleLine="true"/>
-                <EditText android:id="@+id/fnLabSoilP" android:layout_width="match_parent" android:layout_height="48dp" android:hint="Tanah lab: P tersedia (mg/kg; catat metode Bray/Olsen di metode analisis)" android:inputType="numberDecimal" android:textColor="@color/text_main" android:textColorHint="@color/text_muted" android:singleLine="true"/>
-                <EditText android:id="@+id/fnLabSoilK" android:layout_width="match_parent" android:layout_height="48dp" android:hint="Tanah lab: K dapat ditukar (cmol(+)/kg)" android:inputType="numberDecimal" android:textColor="@color/text_main" android:textColorHint="@color/text_muted" android:singleLine="true"/>
-                <EditText android:id="@+id/fnLabSoilCa" android:layout_width="match_parent" android:layout_height="48dp" android:hint="Tanah lab: Ca dapat ditukar (cmol(+)/kg)" android:inputType="numberDecimal" android:textColor="@color/text_main" android:textColorHint="@color/text_muted" android:singleLine="true"/>
-                <EditText android:id="@+id/fnLabSoilMg" android:layout_width="match_parent" android:layout_height="48dp" android:hint="Tanah lab: Mg dapat ditukar (cmol(+)/kg)" android:inputType="numberDecimal" android:textColor="@color/text_main" android:textColorHint="@color/text_muted" android:singleLine="true"/>
-                <EditText android:id="@+id/fnLabSoilCorg" android:layout_width="match_parent" android:layout_height="48dp" android:hint="Tanah lab: C-organik (%)" android:inputType="numberDecimal" android:textColor="@color/text_main" android:textColorHint="@color/text_muted" android:singleLine="true"/>
-            </LinearLayout>
-
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -463,7 +408,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="4. CUACA, AIR &amp; ANGIN"
+                    android:text="3. CUACA, AIR &amp; ANGIN"
                     android:textColor="@color/cyan"
                     android:textStyle="bold"
                     android:textSize="15sp"/>
@@ -720,33 +665,15 @@
                     android:textStyle="bold"
                     android:textSize="15sp"/>
 
-                <!-- Plain-text fallback is kept for compatibility; successful results use cards. -->
                 <TextView
                     android:id="@+id/fnAnalysis"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="7dp"
-                    android:text="Analisis belum tersedia. Lengkapi data kebun, lalu jalankan analisis."
+                    android:text="Belum ada analisis."
                     android:textColor="@color/text_main"
-                    android:textSize="16sp"
-                    android:lineSpacingExtra="6dp"
-                    android:lineSpacingMultiplier="1.10"
-                    android:visibility="gone"/>
-
-                <LinearLayout
-                    android:id="@+id/fnAnalysisCards"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:orientation="vertical">
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Hasil analisis akan tampil di sini setelah tombol analisis ditekan."
-                        android:textColor="@color/text_muted"
-                        android:textSize="16sp"
-                        android:lineSpacingExtra="5dp" />
-                </LinearLayout>
+                    android:textSize="14sp"
+                    android:lineSpacingExtra="2dp"/>
             </LinearLayout>
 
             <LinearLayout
@@ -780,9 +707,8 @@
                     android:layout_marginTop="7dp"
                     android:text="Pustaka: FAO-56 Penman–Monteith; FAO salinity/crop water; rekomendasi NPK Pertanian Indonesia 2024; review pH/amendment 2023; model VPD tanaman; model penyakit/leaf wetness APS; model degree-day Spodoptera frugiperda."
                     android:textColor="@color/text_muted"
-                    android:textSize="15sp"
-                    android:lineSpacingExtra="6dp"
-                    android:lineSpacingMultiplier="1.08"/>
+                    android:textSize="14sp"
+                    android:lineSpacingExtra="2dp"/>
             </LinearLayout>
 
             <LinearLayout

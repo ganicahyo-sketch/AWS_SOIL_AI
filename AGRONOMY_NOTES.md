@@ -1,4 +1,4 @@
-# Agronomy notes – v1.5.8 patch
+# Agronomy notes – v1.5.6 patch
 
 - ThingSpeak is preferred, Open-Meteo is fallback in automatic input mode, and manual entry remains editable.
 - EC sensor values are treated as valid project inputs. Unit conversion only converts µS/cm to dS/m; the app does not require ECe. ECe is optional laboratory reference.

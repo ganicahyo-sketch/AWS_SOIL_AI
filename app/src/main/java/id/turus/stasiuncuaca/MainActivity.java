@@ -7,8 +7,6 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
-import android.location.LocationListener;
-import android.os.Looper;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.View;
@@ -28,6 +26,8 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -52,7 +52,7 @@ public class MainActivity extends Activity {
     private TextView title, subtitle, statusChip, lastAccess, deviceDate, deviceClock, dataTime, channelView;
     private TextView weatherStatus, weatherLocation, weatherTemp, weatherFeels, weatherDew, weatherHumidity,
             weatherPressure, weatherCloud, weatherUv, weatherVisibility, weatherWind, weatherWindDir,
-            weatherRain, weatherEt0, weatherCondition, weatherSunrise, weatherSunset, weatherSunHours, weatherAlerts,
+            weatherRain, weatherEt0, weatherCondition, weatherSunrise, weatherSunset, weatherDaylight, weatherSunshine, weatherAlerts,
             weatherForecast, weatherUpdated, weatherSw, weatherPar, weatherPpfd, weatherPpfdNote;
     private TextView soil, soilStatus, optRisk, overall, finalStatus;
     private GridLayout fieldGrid;
@@ -152,7 +152,8 @@ public class MainActivity extends Activity {
         weatherCondition = findViewById(R.id.weatherCondition);
         weatherSunrise = findViewById(R.id.weatherSunrise);
         weatherSunset = findViewById(R.id.weatherSunset);
-        weatherSunHours = findViewById(R.id.weatherSunHours);
+        weatherDaylight = findViewById(R.id.weatherDaylight);
+        weatherSunshine = findViewById(R.id.weatherSunshine);
         weatherAlerts = findViewById(R.id.weatherAlerts);
         weatherForecast = findViewById(R.id.weatherForecast);
         weatherUpdated = findViewById(R.id.weatherUpdated);
@@ -219,7 +220,7 @@ public class MainActivity extends Activity {
     private void updateHeader() {
         String t = prefs.getString("app_title", DEFAULT_TITLE).trim();
         title.setText(t.isEmpty() ? DEFAULT_TITLE : t);
-        subtitle.setText("GANI CAHYO-UNS • v1.5.8 • Sawit + Open-Meteo + Agronomi");
+        subtitle.setText("GANI CAHYO-UNS • v1.5.6 • Open-Meteo + Agronomi");
         String ch = prefs.getString("channel", "").trim();
         if (ch.isEmpty()) ch = DEFAULT_CHANNEL;
         channelView.setText("CHANNEL: " + (ch.isEmpty() ? "--" : ch));
@@ -248,83 +249,19 @@ public class MainActivity extends Activity {
         if (weatherLoading) return;
         weatherLoading = true;
         lastWeatherEpoch = now;
-        final String provider = prefs.getString("weather_provider", "Open-Meteo");
-        weatherStatus.setText("MEMUAT " + provider.toUpperCase(Locale.US) + "...");
+        weatherStatus.setText("MEMUAT OPEN-METEO...");
         net.execute(() -> {
             try {
-                Weather w = "WeatherAPI.com".equals(provider) ? fetchWeatherApi(lat, lon) : fetchOpenMeteo(lat, lon);
-                runOnUiThread(() -> {
-                    double currentLat = prefs.getFloat("latitude", Float.NaN), currentLon = prefs.getFloat("longitude", Float.NaN);
-                    if (Double.compare(currentLat, lat) != 0 || Double.compare(currentLon, lon) != 0) {
-                        weatherLoading = false;
-                        loadOpenMeteo(true);
-                        return;
-                    }
-                    renderWeather(w); weatherLoading = false;
-                });
+                Weather w = fetchOpenMeteo(lat, lon);
+                runOnUiThread(() -> { renderWeather(w); weatherLoading = false; });
             } catch (Exception e) {
                 runOnUiThread(() -> {
-                    weatherStatus.setText(provider.toUpperCase(Locale.US) + " GAGAL");
+                    weatherStatus.setText("OPEN-METEO GAGAL");
                     weatherLocation.setText(msg(e));
                     weatherLoading = false;
                 });
             }
         });
-    }
-
-    private Weather fetchWeatherApi(double lat, double lon) throws Exception {
-        String key = prefs.getString("weatherapi_key", "").trim();
-        if (key.isEmpty()) throw new Exception("Isi WeatherAPI.com key di Pengaturan, atau pilih Open-Meteo yang tidak memerlukan API key.");
-        String u = "https://api.weatherapi.com/v1/forecast.json?key=" + URLEncoder.encode(key, "UTF-8")
-                + "&q=" + URLEncoder.encode(String.format(Locale.US, "%.6f,%.6f", lat, lon), "UTF-8")
-                + "&days=7&aqi=no&alerts=yes";
-        JSONObject root = getJson(u);
-        JSONObject cur = root.optJSONObject("current");
-        JSONObject loc = root.optJSONObject("location");
-        JSONObject forecast = root.optJSONObject("forecast");
-        JSONArray days = forecast == null ? null : forecast.optJSONArray("forecastday");
-        JSONObject day = days == null || days.length() == 0 ? new JSONObject() : days.optJSONObject(0);
-        JSONObject dayInfo = day == null ? new JSONObject() : day.optJSONObject("day");
-        JSONObject astro = day == null ? new JSONObject() : day.optJSONObject("astro");
-        if (cur == null) throw new Exception("Respons WeatherAPI tidak memuat kondisi saat ini.");
-        Weather w = new Weather();
-        w.temp = cur.optDouble("temp_c", Double.NaN);
-        w.rh = cur.optDouble("humidity", Double.NaN);
-        w.apparent = cur.optDouble("feelslike_c", Double.NaN);
-        w.dewpoint = cur.optDouble("dewpoint_c", Double.NaN);
-        w.rainNow = cur.optDouble("precip_mm", Double.NaN);
-        w.pressure = cur.optDouble("pressure_mb", Double.NaN);
-        w.cloud = cur.optDouble("cloud", Double.NaN);
-        w.windSpeed = cur.optDouble("wind_kph", Double.NaN) / 3.6;
-        w.windDir = cur.optDouble("wind_degree", Double.NaN);
-        w.gust = cur.optDouble("gust_kph", Double.NaN) / 3.6;
-        w.visibility = cur.optDouble("vis_km", Double.NaN) * 1000.0;
-        w.uv = cur.optDouble("uv", Double.NaN);
-        w.sw = Double.NaN; w.par = Double.NaN; w.ppfd = Double.NaN;
-        w.vpd = Double.NaN; w.soilTemp = Double.NaN; w.soilMoisture = Double.NaN;
-        w.et0 = Double.NaN;
-        w.rainDay = dayInfo == null ? Double.NaN : dayInfo.optDouble("totalprecip_mm", Double.NaN);
-        w.sunHours = Double.NaN;
-        w.sunrise = astro == null ? "" : astro.optString("sunrise", "");
-        w.sunset = astro == null ? "" : astro.optString("sunset", "");
-        JSONObject condition = cur.optJSONObject("condition");
-        String conditionText = condition == null ? "Cuaca tidak diketahui" : condition.optString("text", "Cuaca tidak diketahui");
-        w.code = -1;
-        StringBuilder summary = new StringBuilder();
-        if (days != null) for (int i=0; i<days.length() && i<7; i++) {
-            JSONObject x = days.optJSONObject(i); if (x == null) continue;
-            JSONObject di = x.optJSONObject("day"); if (di == null) continue;
-            if (summary.length()>0) summary.append(" | ");
-            summary.append(x.optString("date", "--")).append(" ")
-                    .append(fmt(di.optDouble("mintemp_c", Double.NaN),0)).append("–")
-                    .append(fmt(di.optDouble("maxtemp_c", Double.NaN),0)).append("°C hujan ")
-                    .append(fmt(di.optDouble("totalprecip_mm", Double.NaN),1)).append(" mm");
-        }
-        w.forecast = summary.toString();
-        w.provider = "WeatherAPI.com";
-        w.conditionText = conditionText;
-        w.elevation = Double.NaN;
-        return w;
     }
 
     private Weather fetchOpenMeteo(double lat, double lon) throws Exception {
@@ -364,16 +301,13 @@ public class MainActivity extends Activity {
         w.sunrise = firstString(d, "sunrise");
         w.sunset = firstString(d, "sunset");
         w.forecast = forecastSummary(d);
-        w.provider = "Open-Meteo";
-        w.conditionText = wmo(w.code);
         return w;
     }
 
     private void renderWeather(Weather w) {
-        String provider = w.provider == null ? "Open-Meteo" : w.provider;
-        weatherStatus.setText("ONLINE • " + provider.toUpperCase(Locale.US));
+        weatherStatus.setText("ONLINE • OPEN-METEO");
         weatherLocation.setText("GPS "+fmt(prefs.getFloat("latitude",0),5)+", "+fmt(prefs.getFloat("longitude",0),5)
-                + (Double.isFinite(w.elevation) ? " • elevasi DEM " + fmt(w.elevation,0) + " mdpl" : ""));
+                + " • elevasi DEM " + fmt(w.elevation,0) + " mdpl");
         weatherTemp.setText("Suhu " + fmt(w.temp,1) + " °C");
         weatherFeels.setText("Terasa " + fmt(w.apparent,1) + " °C");
         weatherHumidity.setText("RH " + fmt(w.rh,0) + " %");
@@ -385,18 +319,21 @@ public class MainActivity extends Activity {
         weatherWind.setText("Angin " + fmt(w.windSpeed,1) + " m/s");
         weatherWindDir.setText("Arah " + compass(w.windDir));
         weatherRain.setText("Hujan " + fmt(w.rainDay,1) + " mm/hari");
-        weatherEt0.setText(Double.isFinite(w.et0) ? "ET₀ " + fmt(w.et0,2) + " mm/hari" : "ET₀ tidak tersedia dari provider ini");
-        weatherCondition.setText("Kondisi: " + (w.conditionText == null ? wmo(w.code) : w.conditionText));
-        weatherSunrise.setText("Terbit " + shortTime(w.sunrise));
-        weatherSunset.setText("Terbenam " + shortTime(w.sunset));
-        weatherSunHours.setText(Double.isFinite(w.sunHours) ? "Lama penyinaran matahari " + fmt(w.sunHours, 2) + " jam/hari (Open-Meteo)" : "Lama penyinaran tidak tersedia dari provider ini");
+        weatherEt0.setText("ET₀ " + fmt(w.et0,2) + " mm/hari");
+        weatherCondition.setText("Kondisi: " + wmo(w.code));
+        weatherSunrise.setText("Matahari terbit " + shortTime(w.sunrise));
+        weatherSunset.setText("Matahari terbenam " + shortTime(w.sunset));
+        // Lama siang is derived only for display and is not an agronomy-analysis input.
+        weatherDaylight.setText("Lama siang (terbit–terbenam): " + fmt(daylightDurationHours(w.sunrise, w.sunset),2) + " jam • informasi saja");
+        // Only Open-Meteo sunshine_duration (direct sun above its defined threshold) is analysed.
+        weatherSunshine.setText("Lama penyinaran matahari: " + fmt(w.sunHours,2) + " jam/hari • " + AgronomyEngine.classifySunshine(w.sunHours));
         weatherAlerts.setText("VPD " + fmt(w.vpd,2) + " kPa • " + AgronomyEngine.classifyVpd(w.vpd) + " • Gust " + fmt(w.gust,1) + " m/s");
         weatherForecast.setText("Prakiraan 7 hari: " + w.forecast);
         weatherUpdated.setText("Pembaruan: " + ZonedDateTime.now(WIB).format(DateTimeFormatter.ofPattern("dd/MM HH:mm:ss", Locale.US)));
-        weatherSw.setText(Double.isFinite(w.sw) ? "Shortwave " + fmt(w.sw,0) + " W/m²" : "Shortwave tidak tersedia");
-        weatherPar.setText(Double.isFinite(w.par) ? "PAR estimasi " + fmt(w.par,0) + " W/m²" : "PAR tidak tersedia");
-        weatherPpfd.setText(Double.isFinite(w.ppfd) ? "PPFD estimasi " + fmt(w.ppfd,0) + " µmol/m²/s" : "PPFD tidak tersedia");
-        weatherPpfdNote.setText(Double.isFinite(w.sw) ? "PAR = 0,45 × Shortwave; PPFD = PAR × 4,57 µmol/J (estimasi spektral broadband)" : "Provider ini tidak memberikan radiasi surya pada respons ini; data PAR/PPFD tidak diestimasi dari variabel yang tidak tersedia.");
+        weatherSw.setText("Shortwave " + fmt(w.sw,0) + " W/m²");
+        weatherPar.setText("PAR estimasi " + fmt(w.par,0) + " W/m²");
+        weatherPpfd.setText("PPFD estimasi " + fmt(w.ppfd,0) + " µmol/m²/s");
+        weatherPpfdNote.setText("PAR = 0,45 × Shortwave; PPFD = PAR × 4,57 µmol/J (estimasi spektral broadband)");
 
         String crop = prefs.getString("crop", "Tanaman pertanian");
         double n = num(prefs.getString("soil_n", ""));
@@ -434,6 +371,7 @@ public class MainActivity extends Activity {
                 + "\nECe lab: " + (Double.isFinite(ece)?AgronomyEngine.classifyECe(ece):"belum ada"));
         int hst = (int)Math.round(num(prefs.getString("farm_hst","-1")));
         optRisk.setText(AgronomyEngine.optRisk(crop,w.temp,w.rh,w.rainDay,w.windSpeed,recentOpt(),hst));
+        // Deliberately pass w.sunHours = Open-Meteo sunshine_duration, never the displayed daylight span.
         String all = AgronomyEngine.comprehensiveRangeAnalysis(
                 crop, ph, n, nLow, nHigh, p, k, ec, ece, moist,
                 num(prefs.getString("soil_fc_pct","")), num(prefs.getString("soil_pwp_pct","")), w.soilMoisture, w.soilTemp,
@@ -571,32 +509,17 @@ public class MainActivity extends Activity {
         }
         try {
             LocationManager lm=(LocationManager)getSystemService(LOCATION_SERVICE);
-            String provider = lm.isProviderEnabled(LocationManager.GPS_PROVIDER) ? LocationManager.GPS_PROVIDER
-                    : (lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER) ? LocationManager.NETWORK_PROVIDER : null);
-            if (provider == null) { Toast.makeText(this,"Aktifkan Lokasi/GPS HP lalu coba lagi.",Toast.LENGTH_LONG).show(); return; }
-            weatherStatus.setText("MENGAMBIL GPS TERBARU...");
-            LocationListener listener = new LocationListener() {
-                @Override public void onLocationChanged(Location location) {
-                    lm.removeUpdates(this);
-                    prefs.edit().putFloat("latitude",(float)location.getLatitude())
-                            .putFloat("longitude",(float)location.getLongitude()).apply();
-                    lastWeatherEpoch = 0L;
-                    weatherLoading = false;
-                    weatherLocation.setText(String.format(Locale.US,"GPS baru %.6f, %.6f",location.getLatitude(),location.getLongitude()));
-                    Toast.makeText(MainActivity.this,"Koordinat GPS diperbarui. Memuat cuaca untuk lokasi baru...",Toast.LENGTH_SHORT).show();
-                    loadOpenMeteo(true);
-                }
-                @Override public void onProviderDisabled(String p) { }
-                @Override public void onProviderEnabled(String p) { }
-                @Override public void onStatusChanged(String p,int status,android.os.Bundle extras) { }
-            };
-            lm.requestSingleUpdate(provider, listener, Looper.getMainLooper());
-            handler.postDelayed(() -> {
-                try { lm.removeUpdates(listener); } catch (Exception ignored) { }
-                if (weatherStatus.getText().toString().contains("MENGAMBIL GPS"))
-                    weatherStatus.setText("GPS BELUM DIPEROLEH • pastikan lokasi aktif dan coba lagi");
-            }, 20000L);
-        } catch(Exception e){Toast.makeText(this,"Gagal membaca GPS HP: "+msg(e),Toast.LENGTH_LONG).show();}
+            Location best=null;
+            for(String p:new String[]{LocationManager.GPS_PROVIDER,LocationManager.NETWORK_PROVIDER}){
+                if(!lm.isProviderEnabled(p))continue;
+                Location x=lm.getLastKnownLocation(p);
+                if(x!=null&&(best==null||x.getTime()>best.getTime()))best=x;
+            }
+            if(best==null){Toast.makeText(this,"Lokasi terakhir HP belum tersedia.",Toast.LENGTH_SHORT).show();return;}
+            prefs.edit().putFloat("latitude",(float)best.getLatitude()).putFloat("longitude",(float)best.getLongitude()).apply();
+            Toast.makeText(this,"Koordinat GPS HP disimpan.",Toast.LENGTH_SHORT).show();
+            loadOpenMeteo(true);
+        } catch(Exception e){Toast.makeText(this,"Gagal membaca GPS HP.",Toast.LENGTH_SHORT).show();}
     }
 
     @Override public void onRequestPermissionsResult(int req,String[] perms,int[] grants){
@@ -613,12 +536,26 @@ public class MainActivity extends Activity {
     private String fmt(double v,int d){return Double.isFinite(v)?String.format(Locale.US,"%."+d+"f",v):"--";}
     private String msg(Exception e){return e.getMessage()==null?"kesalahan tidak diketahui":e.getMessage();}
     private String readAll(InputStream in)throws Exception{if(in==null)return "";StringBuilder b=new StringBuilder();try(BufferedReader r=new BufferedReader(new InputStreamReader(in,StandardCharsets.UTF_8))){String l;while((l=r.readLine())!=null)b.append(l);}return b.toString();}
+    private double daylightDurationHours(String sunriseIso, String sunsetIso) {
+        if (sunriseIso == null || sunsetIso == null || sunriseIso.trim().isEmpty() || sunsetIso.trim().isEmpty()) return Double.NaN;
+        try {
+            // Open-Meteo returns ISO local date-times for the requested Asia/Jakarta timezone.
+            LocalDateTime sunrise = LocalDateTime.parse(sunriseIso.trim());
+            LocalDateTime sunset = LocalDateTime.parse(sunsetIso.trim());
+            long minutes = Duration.between(sunrise, sunset).toMinutes();
+            if (minutes <= 0 || minutes >= 24 * 60) return Double.NaN;
+            return minutes / 60.0;
+        } catch (Exception ignored) {
+            return Double.NaN;
+        }
+    }
+
     private String shortTime(String s){if(s==null||s.isEmpty())return "--";int p=s.indexOf('T');if(p>=0&&s.length()>=p+6)return s.substring(p+1,p+6);return s;}
     public static String compass(double deg){if(!Double.isFinite(deg))return "--";String[] p={"Utara","Utara-Timur Laut","Timur Laut","Timur-Timur Laut","Timur","Timur-Tenggara","Tenggara","Selatan-Tenggara","Selatan","Selatan-Barat Daya","Barat Daya","Barat-Barat Daya","Barat","Barat-Barat Laut","Barat Laut","Utara-Barat Laut"};int i=(int)Math.floor((deg+11.25)/22.5)%16;return p[i];}
     private String wmo(int c){switch(c){case 0:return "Cerah";case 1:case 2:return "Cerah berawan / sebagian berawan";case 3:return "Berawan";case 45:case 48:return "Kabut";case 51:case 53:case 55:return "Gerimis";case 61:case 63:case 65:return "Hujan";case 66:case 67:return "Hujan beku";case 71:case 73:case 75:return "Salju";case 80:case 81:case 82:return "Hujan deras lokal";case 95:return "Badai petir";default:return "Kode WMO "+c;}}
 
     private static final class Weather{
         double temp,rh,apparent,dewpoint,rainNow,pressure,cloud,windSpeed,windDir,gust,visibility,uv,sw,par,ppfd,vpd,soilTemp,soilMoisture,et0,sunHours,rainDay,elevation;
-        int code; String forecast,sunrise,sunset,provider,conditionText;
+        int code; String forecast,sunrise,sunset;
     }
 }
