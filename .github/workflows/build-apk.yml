@@ -1,4 +1,4 @@
-name: Build APK - STASIUN CUACA SAWIT • GANI CAHYO-UNS v1.5.8
+name: Build APK - SIM-TANI • GANI CAHYO-UNS v1.5.8
 
 on:
   push:
@@ -88,7 +88,7 @@ jobs:
       - name: Upload APK artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: STASIUN-CUACA-SAWIT-v1.5.8-APK
+          name: SIM-TANI-v1.5.8-APK
           path: |
             app/build/outputs/apk/debug/app-debug.apk
             app/build/outputs/apk/release/app-release-unsigned.apk
