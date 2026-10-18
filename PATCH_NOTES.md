@@ -99,3 +99,26 @@ Prediksi OPT bukan diagnosis. Verifikasi dengan gejala, populasi, luas serangan,
 - Lama siang dihitung hanya untuk tampilan dari `sunrise` dan `sunset`; hasil di luar 0–24 jam atau waktu yang tidak valid ditampilkan `--`.
 - Hanya Open-Meteo `sunshine_duration` yang dikonversi dari detik ke jam dan digunakan dalam klasifikasi/analisis agronomi. Lama siang dan `daylight_duration` tidak digunakan sebagai masukan analisis.
 - Kunci preferensi `om_sun_hours` dipertahankan untuk kompatibilitas data lama.
+
+## N SENSOR + AAR OIL-PALM FERTILISER UPDATE — 2026-10-18
+- N-total screening now reports one midpoint estimate using the 3% midpoint assumption (available N ≈ 3% of total N), instead of the previous 1–5% range that could display overlapping classes.
+- N-total class is now a single class based on the midpoint estimate: Very Low / Low / Medium / High / Very High.
+- The midpoint N-total screening is used only as an additional conservative cross-check in the N nutrient-need calculation; it is not converted directly from sensor mg/kg into fertilizer kg/ha.
+- Added oil-palm fertiliser prerequisites, nutrient-balance method, frequency, timing, placement and application guidance based on Goh et al., “Fertiliser Management in Oil Palm – Agronomic Principles and Field Practices”, AAR Sdn Bhd.
+- AAR timing rules added as decision gates: avoid application during monthly rainfall >250 mm or <25 mm, >15 rain days/month, rainfall intensity >25 mm/day, or saturated soil after continuous rain; adapt timing to fertiliser type and field conditions.
+- AAR frequency guidance added: K can be sufficient in one annual application in the cited example; more rounds are not automatically better. Immature palms can require higher frequency; mature oil palm phosphate rock is commonly one round due to residual value.
+- AAR placement guidance added: young palms progressively extend N placement from palm circle toward interrows/frond heaps as roots/canopy develop; mature palms can broadcast N/K in interrows and frond heaps while avoiding harvester paths; phosphate rock can be broadcast on older mature palms.
+- Balanced nutrition warning retained: excessive K can depress Mg and B uptake.
+- Daylight duration remains informational only; agronomic analysis uses Open-Meteo sunshine_duration only.
+- Full Gradle build was attempted but could not run in this offline environment because Gradle 9.4.1 was not cached and services.gradle.org could not be resolved. GitHub Actions should perform the authoritative Android build.
+
+
+## Patch lanjutan: Open-Meteo, umur tanam, pupuk/dolomit, dan simpan catatan
+- Dashboard cuaca menampilkan `sunshine_duration` Open-Meteo secara eksplisit (jam/hari), terpisah dari lama siang terbit–terbenam.
+- PAR, PPFD, dan lux estimasi dari shortwave radiation Open-Meteo digunakan pada analisis agronomi dan otomatis diisi ke Catatan Lapangan. Lux diberi label estimasi, bukan hasil lux-meter.
+- Catatan Lapangan mempertahankan label satuan yang terlihat setelah nilai diisi untuk parameter agronomi/cuaca.
+- Sawit memakai tahun tanam `YYYY` dan umur otomatis dalam tahun; tanaman lain memakai tanggal tanam `YYYY-MM-DD`, dengan umur otomatis HST atau MST. Umur disimpan sebagai ekuivalen hari agar fase agronomi yang sudah ada tetap bekerja.
+- Ditambahkan input komposisi pupuk fleksibel, satu produk per baris `Nama|N%|P2O5%|K2O%`, termasuk NPK majemuk atau pupuk tunggal. Laporan menghitung perkiraan kg/ha/tahun dan kg/pokok/tahun sesuai populasi.
+- Bila pH < 5,5, laporan menampilkan estimasi kebutuhan dolomit kg/ha/tahun, kg/pokok/pemupukan, dan kg/pokok/tahun. Jika tidak ada kebutuhan kapur laboratorium, dosis awal memakai asumsi kasar berdasarkan kelas pH dan ditandai untuk verifikasi laboratorium.
+- Perbaikan simpan catatan: adapter satuan umur yang sebelumnya tidak diinisialisasi kini disiapkan, riwayat dibatasi ukuran JSON, penulisan riwayat memakai `commit()` dan error ditampilkan; kegagalan penyegaran analisis setelah penyimpanan tidak lagi dilaporkan keliru sebagai gagal simpan.
+- Build Android belum dapat diverifikasi di lingkungan ini karena Gradle 9.4.1 tidak tersedia di cache dan `services.gradle.org` tidak dapat dijangkau. XML layout lolos parsing; pemeriksaan sintaks Java tanpa Android SDK tidak menunjukkan error sintaks, tetapi bukan pengganti build Gradle penuh.

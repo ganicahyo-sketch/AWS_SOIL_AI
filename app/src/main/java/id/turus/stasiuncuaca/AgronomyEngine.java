@@ -639,11 +639,26 @@ public final class AgronomyEngine {
         double support=0; String cls;
         if (nutrient.equals("N")) cls=classifyN(soilValue,nLow,nHigh); else if (nutrient.equals("P")) cls=classifyP(soilValue,method); else cls=classifyK(soilValue,method);
         String simpleClass=nutrientClass(cls);
-        if ("Sangat Rendah".equals(simpleClass)) support=0.00;
-        else if ("Rendah".equals(simpleClass)) support=0.20;
-        else if ("Sedang".equals(simpleClass)) support=0.50;
-        else if ("Tinggi".equals(simpleClass)) support=0.80;
-        else if ("Sangat Tinggi".equals(simpleClass)) support=1.00;
+        if ("N".equals(nutrient)) {
+            // Use the single midpoint N-total estimate only as an additional screening
+            // check. Do not convert it directly to kg fertilizer because the sensor
+            // method is not a calibrated laboratory N-total method.
+            double nMidSupport = NitrogenInference.supportFactor(soilValue);
+            if (Double.isFinite(nMidSupport)) {
+                double classSupport = "Sangat Rendah".equals(simpleClass) ? 0.00 :
+                        "Rendah".equals(simpleClass) ? 0.20 :
+                        "Sedang".equals(simpleClass) ? 0.50 :
+                        "Tinggi".equals(simpleClass) ? 0.80 :
+                        "Sangat Tinggi".equals(simpleClass) ? 1.00 : Double.NaN;
+                if (Double.isFinite(classSupport)) support = Math.min(classSupport, nMidSupport);
+            }
+        } else {
+            if ("Sangat Rendah".equals(simpleClass)) support=0.00;
+            else if ("Rendah".equals(simpleClass)) support=0.20;
+            else if ("Sedang".equals(simpleClass)) support=0.50;
+            else if ("Tinggi".equals(simpleClass)) support=0.80;
+            else if ("Sangat Tinggi".equals(simpleClass)) support=1.00;
+        }
         double gross=stageNeed*(1.0-support);
         double recovery=nutrient.equals("N")?0.50:(nutrient.equals("P")?0.30:0.60);
         double need=Math.max(0,gross/Math.max(0.1,recovery)-Math.max(0,recentCreditKgHa));

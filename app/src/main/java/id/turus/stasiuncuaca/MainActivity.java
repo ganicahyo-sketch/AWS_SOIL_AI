@@ -53,7 +53,7 @@ public class MainActivity extends Activity {
     private TextView weatherStatus, weatherLocation, weatherTemp, weatherFeels, weatherDew, weatherHumidity,
             weatherPressure, weatherCloud, weatherUv, weatherVisibility, weatherWind, weatherWindDir,
             weatherRain, weatherEt0, weatherCondition, weatherSunrise, weatherSunset, weatherDaylight, weatherSunshine, weatherAlerts,
-            weatherForecast, weatherUpdated, weatherSw, weatherPar, weatherPpfd, weatherPpfdNote;
+            weatherForecast, weatherUpdated, weatherSw, weatherLux, weatherPar, weatherPpfd, weatherPpfdNote;
     private TextView soil, soilStatus, optRisk, overall, finalStatus;
     private GridLayout fieldGrid;
     private TextView[] fieldLabels = new TextView[8];
@@ -158,6 +158,7 @@ public class MainActivity extends Activity {
         weatherForecast = findViewById(R.id.weatherForecast);
         weatherUpdated = findViewById(R.id.weatherUpdated);
         weatherSw = findViewById(R.id.weatherSw);
+        weatherLux = findViewById(R.id.weatherLux);
         weatherPar = findViewById(R.id.weatherPar);
         weatherPpfd = findViewById(R.id.weatherPpfd);
         weatherPpfdNote = findViewById(R.id.weatherPpfdNote);
@@ -295,6 +296,7 @@ public class MainActivity extends Activity {
         w.elevation = root.optDouble("elevation", Double.NaN);
         w.par = LightConversion.shortwaveToParWm2(w.sw);
         w.ppfd = LightConversion.parToPpfd(w.par);
+        w.lux = LightConversion.shortwaveToLuxEstimate(w.sw);
         w.et0 = first(d, "et0_fao_evapotranspiration");
         w.sunHours = first(d, "sunshine_duration") / 3600.0;
         w.rainDay = first(d, "precipitation_sum");
@@ -326,14 +328,15 @@ public class MainActivity extends Activity {
         // Lama siang is derived only for display and is not an agronomy-analysis input.
         weatherDaylight.setText("Lama siang (terbit–terbenam): " + fmt(daylightDurationHours(w.sunrise, w.sunset),2) + " jam • informasi saja");
         // Only Open-Meteo sunshine_duration (direct sun above its defined threshold) is analysed.
-        weatherSunshine.setText("Lama penyinaran matahari: " + fmt(w.sunHours,2) + " jam/hari • " + AgronomyEngine.classifySunshine(w.sunHours));
+        weatherSunshine.setText("Open-Meteo sunshine_duration: " + fmt(w.sunHours,2) + " jam/hari • " + AgronomyEngine.classifySunshine(w.sunHours));
         weatherAlerts.setText("VPD " + fmt(w.vpd,2) + " kPa • " + AgronomyEngine.classifyVpd(w.vpd) + " • Gust " + fmt(w.gust,1) + " m/s");
         weatherForecast.setText("Prakiraan 7 hari: " + w.forecast);
         weatherUpdated.setText("Pembaruan: " + ZonedDateTime.now(WIB).format(DateTimeFormatter.ofPattern("dd/MM HH:mm:ss", Locale.US)));
         weatherSw.setText("Shortwave " + fmt(w.sw,0) + " W/m²");
+        weatherLux.setText("Lux estimasi " + fmt(w.lux,0) + " lux (dari radiasi Open-Meteo)");
         weatherPar.setText("PAR estimasi " + fmt(w.par,0) + " W/m²");
         weatherPpfd.setText("PPFD estimasi " + fmt(w.ppfd,0) + " µmol/m²/s");
-        weatherPpfdNote.setText("PAR = 0,45 × Shortwave; PPFD = PAR × 4,57 µmol/J (estimasi spektral broadband)");
+        weatherPpfdNote.setText("Estimasi: PAR = 0,45 × Shortwave; PPFD = PAR × 4,57 µmol/J; lux ≈ Shortwave × 120. Bukan pengukuran sensor cahaya.");
 
         String crop = prefs.getString("crop", "Tanaman pertanian");
         double n = num(prefs.getString("soil_n", ""));
@@ -354,7 +357,7 @@ public class MainActivity extends Activity {
                 .putString("om_wind_gust",fmt(w.gust,2)).putString("om_cloud_cover",fmt(w.cloud,0))
                 .putString("om_visibility",fmt(w.visibility,0)).putString("om_uv",fmt(w.uv,1))
                 .putString("om_sun_hours",fmt(w.sunHours,2)).putString("om_radiation",fmt(w.sw,2))
-                .putString("om_par",fmt(w.par,3)).putString("om_ppfd",fmt(w.ppfd,3))
+                .putString("om_par",fmt(w.par,3)).putString("om_ppfd",fmt(w.ppfd,3)).putString("om_lux",fmt(w.lux,0))
                 .putString("om_soil_temp",fmt(w.soilTemp,2)).putString("om_soil_moisture",fmt(w.soilMoisture,2))
                 .putString("om_weather",wmo(w.code)).putString("om_forecast_7d",w.forecast).apply();
 
@@ -555,7 +558,7 @@ public class MainActivity extends Activity {
     private String wmo(int c){switch(c){case 0:return "Cerah";case 1:case 2:return "Cerah berawan / sebagian berawan";case 3:return "Berawan";case 45:case 48:return "Kabut";case 51:case 53:case 55:return "Gerimis";case 61:case 63:case 65:return "Hujan";case 66:case 67:return "Hujan beku";case 71:case 73:case 75:return "Salju";case 80:case 81:case 82:return "Hujan deras lokal";case 95:return "Badai petir";default:return "Kode WMO "+c;}}
 
     private static final class Weather{
-        double temp,rh,apparent,dewpoint,rainNow,pressure,cloud,windSpeed,windDir,gust,visibility,uv,sw,par,ppfd,vpd,soilTemp,soilMoisture,et0,sunHours,rainDay,elevation;
+        double temp,rh,apparent,dewpoint,rainNow,pressure,cloud,windSpeed,windDir,gust,visibility,uv,sw,par,ppfd,lux,vpd,soilTemp,soilMoisture,et0,sunHours,rainDay,elevation;
         int code; String forecast,sunrise,sunset;
     }
 }

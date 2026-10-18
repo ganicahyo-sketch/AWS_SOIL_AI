@@ -69,7 +69,7 @@ public class AgronomyActivity extends Activity {
         s.append("Metode N/P/K: ").append(method).append("\n");
         s.append("N tersedia ").append(show(n)).append(" mg/kg -> ").append(AgronomyEngine.classifyN(n,nLow,nHigh)).append("\n");
         s.append("N-total diprediksi dari N tersedia: ").append(NitrogenInference.estimateTotalN(n)).append("\n");
-        s.append("Kelas N-total yang mungkin: ").append(NitrogenInference.classifyRange(n)).append("\n");
+        s.append("Status N-total estimasi titik tengah: ").append(NitrogenInference.classifyRange(n)).append("\n");
         s.append("P tersedia ").append(show(p)).append(" mg/kg -> ").append(AgronomyEngine.classifyP(p,method)).append("\n");
         s.append("K tersedia ").append(show(k)).append(" mg/kg -> ").append(AgronomyEngine.classifyK(k,method)).append("\n");
         s.append("EC sensor ").append(show(ec)).append(" µS/cm -> ").append(AgronomyEngine.classifyEC(ec,cp)).append("\n");
@@ -87,7 +87,7 @@ public class AgronomyActivity extends Activity {
                 crop, ph, n, nLow, nHigh, p, k, ec, ece, moist, fc, pwp,
                 num(prefs.getString("om_soil_moisture","")), num(prefs.getString("om_soil_temp","")), om, cec, bd, depth,
                 temp, apparent, dew, rh, pressure, rain, et0, wind, gust, cloud, uv,
-                visibility, num(prefs.getString("lux","")), shortwave, parEnergy, ppfd, sunshine, vpd, method));
+                visibility, num(prefs.getString("om_lux", prefs.getString("lux", ""))), shortwave, parEnergy, ppfd, sunshine, vpd, method));
         s.append("\n\n3. NPK & PREDIKSI KEBUTUHAN FASE\n");
         double target=num(pref("farm_target_yield_t_ha",""));
         double nn=AgronomyEngine.nutrientNeed(n,"N",crop,hst,fertCredit(crop)[0],target,method,depth,bd,nLow,nHigh);
@@ -96,7 +96,13 @@ public class AgronomyActivity extends Activity {
         s.append("N skrining fase: ").append(show(nn)).append(" kg N/ha\nP2O5 skrining fase: ").append(show(pp)).append(" kg P2O5/ha\nK2O skrining fase: ").append(show(kk)).append(" kg K2O/ha\n");
         s.append("Rumus skrining: ").append(AgronomyEngine.nutrientFormulaText()).append("\n");
         s.append("PENTING: bukan QUEFTS/STCR penuh. Gunakan persamaan STCR/PUTS lokal bila tersedia.\n");
-        s.append("\n4. CUACA, VPD, AIR & EKOLOGI\n");
+        s.append("\n4. KALKULASI PRODUK PUPUK YANG DIPILIH\n");
+        s.append(calculateFertilizerPlan(prefs.getString("fertilizer_plan", "NPK 15-15-15|15|15|15"), nn, pp, kk,
+                num(prefs.getString("farm_plant_density_ha", isPalm(crop) ? "143" : ""))));
+        s.append("\nKebutuhan pupuk dihitung dari target skrining N, P₂O₅, K₂O dan komposisi produk yang dimasukkan; dosis yang menimbulkan kelebihan hara ditandai sebagai perkiraan dan perlu ditinjau agronom.\n");
+        s.append("\n5. KEBUTUHAN DOLOMIT BILA pH MASAM\n");
+        s.append(calculateDolomite(ph, lime, num(prefs.getString("farm_plant_density_ha", isPalm(crop) ? "143" : ""))));
+        s.append("\n6. CUACA, VPD, AIR & EKOLOGI\n");
         s.append("Suhu ").append(show(temp)).append(" °C -> ").append(AgronomyEngine.temperatureStatus(temp,crop)).append("; kisaran profil ").append(show(cp.tempMin)).append("–").append(show(cp.tempMax)).append(" °C\n");
         s.append("RH ").append(show(rh)).append(" %; hujan ").append(show(rain)).append(" mm/hari; ET0 ").append(show(et0)).append(" mm/hari\n");
         s.append("VPD ").append(show(vpd)).append(" kPa -> ").append(AgronomyEngine.classifyVpd(vpd)).append("\n");
@@ -105,22 +111,90 @@ public class AgronomyActivity extends Activity {
         s.append("Terasa ").append(pref("om_apparent_temp","--")).append(" °C • titik embun ").append(pref("om_dewpoint","--")).append(" °C • awan ").append(pref("om_cloud_cover","--")).append(" % • visibilitas ").append(pref("om_visibility","--")).append(" m • UV ").append(pref("om_uv","--")).append("\n");
         s.append("Radiasi ").append(pref("om_radiation","--")).append(" W/m² • sunshine ").append(pref("om_sun_hours","--")).append(" jam/hari\n");        s.append("PAR estimasi ").append(pref("om_par","--")).append(" W/m² • PPFD estimasi ").append(pref("om_ppfd","--")).append(" µmol/m²/s\n");
         s.append("Forecast 7 hari: ").append(pref("om_forecast_7d","belum ada")).append("\n");
-        s.append("\n5. PREDIKSI POTENSI OPT — RISK SCREENING\n");
+        s.append("\n7. PREDIKSI POTENSI OPT — RISK SCREENING\n");
         s.append(AgronomyEngine.optRisk(crop,temp,rh,rain,num(pref("om_wind_speed","")),recent("opt_history",6),hst)).append("\n");
-        s.append("\n6. REKOMENDASI TEKNIS\n");
+        s.append("\n8. REKOMENDASI TEKNIS\n");
         addRecommendations(s,crop,mode,ph,ec,ece,moist,fc,pwp,vpd,temp,rh,rain,et0,hst,method);
         String palmAdvice = PalmOilAdvisor.build(crop,hst,n,p,k,ec,ph,moist,rain,rh);
-        if (!palmAdvice.isEmpty()) s.append("\n7. DATABASE & REKOMENDASI KHUSUS KELAPA SAWIT\n").append(palmAdvice).append("\n");
-        s.append("\n8. CATATAN ILMIAH\n").append(AgronomyEngine.evidenceBrief()).append("\n");
+        if (!palmAdvice.isEmpty()) s.append("\n9. DATABASE & REKOMENDASI KHUSUS KELAPA SAWIT\n").append(palmAdvice).append("\n");
+        s.append("\n10. CATATAN ILMIAH\n").append(AgronomyEngine.evidenceBrief()).append("\n");
         // Histori terpadu disimpan untuk laporan cetak/PDF, tetapi tidak ditampilkan pada layar analisis utama.
         String compact = compactReport(s.toString());
         report.setText(compact); prefs.edit().putString("last_agronomy_analysis",compact).apply();
     }
 
+    private boolean isPalm(String crop) {
+        String c = crop == null ? "" : crop.toLowerCase(Locale.US);
+        return c.contains("sawit") || c.contains("oil palm");
+    }
+
+    private String calculateFertilizerPlan(String plan, double nNeed, double pNeed, double kNeed, double plantsPerHa) {
+        StringBuilder out = new StringBuilder();
+        if (!Double.isFinite(plantsPerHa) || plantsPerHa <= 0) {
+            out.append("Isi populasi tanaman (pokok/ha) pada Catatan Lapangan untuk menghitung dosis per pokok.\n");
+        }
+        java.util.ArrayList<String> names = new java.util.ArrayList<>();
+        java.util.ArrayList<double[]> comps = new java.util.ArrayList<>();
+        if (plan != null) for (String row : plan.split("[;\\n]+")) {
+            String[] v = row.trim().split("\\|");
+            if (v.length < 4) continue;
+            try {
+                double a = Double.parseDouble(v[1].trim().replace(',', '.'));
+                double b = Double.parseDouble(v[2].trim().replace(',', '.'));
+                double c = Double.parseDouble(v[3].trim().replace(',', '.'));
+                if (a < 0 || b < 0 || c < 0 || a > 100 || b > 100 || c > 100 || a+b+c <= 0) continue;
+                names.add(v[0].trim()); comps.add(new double[]{a/100.0,b/100.0,c/100.0});
+            } catch (Exception ignored) {}
+        }
+        if (comps.isEmpty()) return out.append("Belum ada komposisi valid. Format setiap baris: Nama|N%|P₂O₅%|K₂O%. Contoh NPK 15-15-15|15|15|15.\n").toString();
+        double[] rem = {Math.max(0, finiteOrZero(nNeed)), Math.max(0, finiteOrZero(pNeed)), Math.max(0, finiteOrZero(kNeed))};
+        double[] supplied = new double[3]; double[] dose = new double[comps.size()];
+        for (int pass=0; pass<3; pass++) {
+            int nutrient = -1; double largest = 0;
+            for (int j=0;j<3;j++) if (rem[j] > largest) { largest=rem[j]; nutrient=j; }
+            if (nutrient < 0 || largest < 0.01) break;
+            int best=-1; double bestPct=0;
+            for (int i=0;i<comps.size();i++) if (comps.get(i)[nutrient] > bestPct) { bestPct=comps.get(i)[nutrient]; best=i; }
+            if (best < 0 || bestPct <= 0) break;
+            double kgHa=rem[nutrient]/bestPct; dose[best]+=kgHa;
+            for (int j=0;j<3;j++) { double add=kgHa*comps.get(best)[j]; supplied[j]+=add; rem[j]=Math.max(0,rem[j]-add); }
+        }
+        out.append("Target skrining: N ").append(show(nNeed)).append(" kg N/ha/tahun; P₂O₅ ").append(show(pNeed)).append(" kg/ha/tahun; K₂O ").append(show(kNeed)).append(" kg/ha/tahun.\n");
+        boolean any=false;
+        for (int i=0;i<dose.length;i++) if (dose[i] > 0.001) {
+            any=true; out.append("• ").append(names.get(i)).append(" (N-P₂O₅-K₂O ").append(show(comps.get(i)[0]*100)).append("-").append(show(comps.get(i)[1]*100)).append("-").append(show(comps.get(i)[2]*100)).append("%): ").append(show(dose[i])).append(" kg/ha/tahun");
+            if (Double.isFinite(plantsPerHa) && plantsPerHa > 0) out.append(" = ").append(show(dose[i]/plantsPerHa)).append(" kg/pokok/tahun");
+            out.append("\n");
+        }
+        if (!any) out.append("Tidak dapat menghitung dosis: target hara atau komposisi pupuk belum memadai.\n");
+        out.append("Estimasi hara dari campuran yang dihitung: N ").append(show(supplied[0])).append("; P₂O₅ ").append(show(supplied[1])).append("; K₂O ").append(show(supplied[2])).append(" kg/ha/tahun.\n");
+        if (rem[0]+rem[1]+rem[2] > 1.0) out.append("Catatan: komposisi yang dimasukkan belum mencukupi semua target; tambahkan pupuk tunggal/produk lain.\n");
+        out.append("Urutan input tidak mengubah kandungan yang tercatat; algoritme memilih produk dengan kadar tertinggi untuk hara yang paling belum terpenuhi. Angka merupakan estimasi model skrining, bukan rekomendasi laboratorium final.\n");
+        return out.toString();
+    }
+
+    private String calculateDolomite(double ph, double labLimeKgHa, double plantsPerHa) {
+        if (!Double.isFinite(ph)) return "pH belum tersedia; kebutuhan dolomit belum bisa dihitung.\n";
+        if (ph >= 5.5) return "pH "+show(ph)+"; tidak diklasifikasikan masam oleh skrining ini (ambang <5,5). Jangan menambahkan dolomit tanpa kebutuhan yang terverifikasi.\n";
+        double limeKgHa;
+        String basis;
+        if (Double.isFinite(labLimeKgHa) && labLimeKgHa > 0) { limeKgHa=labLimeKgHa/0.90; basis="kebutuhan kapur laboratorium dikoreksi efisiensi dolomit asumsi 90%"; }
+        else { limeKgHa = ph < 4.5 ? 2000 : ph < 5.0 ? 1500 : 1000; basis="estimasi awal berbasis kelas pH saja"; }
+        double perPalm=Double.isFinite(plantsPerHa)&&plantsPerHa>0 ? limeKgHa/plantsPerHa : Double.NaN;
+        StringBuilder b = new StringBuilder();
+        b.append("pH ").append(show(ph)).append(" (masam). Kebutuhan dolomit skrining: ").append(show(limeKgHa)).append(" kg/ha/tahun (asumsi 1 aplikasi/tahun; ").append(basis).append(").\n");
+        if (Double.isFinite(perPalm)) b.append("• ").append(show(perPalm)).append(" kg/pokok/pemupukan; ").append(show(perPalm)).append(" kg/pokok/tahun pada 1 aplikasi/tahun.\n");
+        else b.append("Isi populasi tanaman (pokok/ha) untuk mendapatkan kg/pokok/pemupukan dan kg/pokok/tahun.\n");
+        if (!Double.isFinite(labLimeKgHa) || labLimeKgHa <= 0) b.append("PENTING: ini hanya perkiraan kasar untuk perencanaan; pH tunggal tidak cukup menentukan kebutuhan kapur. Verifikasi dengan pH-buffer/Al-dd/CEC atau rekomendasi laboratorium, serta cek nilai netralisasi dan Mg produk dolomit.\n");
+        return b.toString();
+    }
+
+    private double finiteOrZero(double v) { return Double.isFinite(v) ? v : 0.0; }
+
     private String compactReport(String text){
         String[] lines=text.split("\\n"); StringBuilder out=new StringBuilder(); boolean skip=false;
         for(String line:lines){String t=line.trim();
-            if(t.startsWith("7. CATATAN ILMIAH")){skip=true;continue;}
+            if(t.startsWith("10. CATATAN ILMIAH")){skip=true;continue;}
             if(skip){
                 if(t.startsWith("8. HISTORI TERPADU")) skip=false;
                 else continue;

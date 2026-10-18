@@ -14,4 +14,10 @@ public final class LightConversion {
     public static double shortwaveToPpfd(double shortwaveWm2) {
         return parToPpfd(shortwaveToParWm2(shortwaveWm2));
     }
+
+    /** Rough broadband daylight illuminance estimate; not a lux-meter measurement. */
+    public static double shortwaveToLuxEstimate(double shortwaveWm2) {
+        if (!Double.isFinite(shortwaveWm2) || shortwaveWm2 < 0) return Double.NaN;
+        return shortwaveWm2 * 120.0;
+    }
 }

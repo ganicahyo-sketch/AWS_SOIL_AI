@@ -92,6 +92,7 @@
                         android:textColor="@color/text_main"
                         android:textColorHint="@color/text_muted"
                         android:singleLine="true"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Tanggal catatan (YYYY-MM-DD)" android:textColor="@color/text_muted" android:textSize="11sp"/>
 
                     <EditText
                         android:id="@+id/fnTime"
@@ -102,6 +103,7 @@
                         android:textColor="@color/text_main"
                         android:textColorHint="@color/text_muted"
                         android:singleLine="true"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Waktu catatan (WIB)" android:textColor="@color/text_muted" android:textSize="11sp"/>
                 </LinearLayout>
 
                 <EditText
@@ -133,6 +135,7 @@
                     android:textColor="@color/text_main"
                     android:textColorHint="@color/text_muted"
                     android:singleLine="true"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Tahun tanam YYYY khusus sawit; tanggal YYYY-MM-DD untuk tanaman lain" android:textColor="@color/text_muted" android:textSize="11sp"/>
 
                 <EditText
                     android:id="@+id/fnHst"
@@ -143,6 +146,7 @@
                     android:textColor="@color/text_main"
                     android:textColorHint="@color/text_muted"
                     android:singleLine="true"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Umur otomatis; sawit dalam tahun, tanaman lain HST atau MST" android:textColor="@color/text_muted" android:textSize="11sp"/>
 
                 <Spinner
                     android:id="@+id/fnAgeUnit"
@@ -167,6 +171,18 @@
                     android:textColor="@color/text_main"
                     android:textColorHint="@color/text_muted"
                     android:singleLine="true"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Target hasil (ton/ha)" android:textColor="@color/text_muted" android:textSize="11sp"/>
+
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="Populasi tanaman (pokok/ha) untuk konversi dosis per tanaman" android:textColor="@color/cyan" android:textSize="13sp"/>
+                <EditText android:id="@+id/fnPlantDensity" android:layout_width="match_parent" android:layout_height="48dp" android:hint="Populasi tanaman (pokok/ha), sawit umumnya sekitar 143" android:inputType="numberDecimal" android:textColor="@color/text_main" android:textColorHint="@color/text_muted" android:singleLine="true"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Populasi (pokok/ha)" android:textColor="@color/text_muted" android:textSize="11sp"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="Komposisi pupuk untuk kalkulasi fleksibel" android:textColor="@color/cyan" android:textSize="13sp"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Format tetap: Nama|N%|P₂O₅%|K₂O%; satu produk per baris. Nilai kandungan dalam persen (%)" android:textColor="@color/text_muted" android:textSize="11sp"/>
+                <EditText android:id="@+id/fnFertilizerPlan" android:layout_width="match_parent" android:layout_height="110dp" android:gravity="top" android:hint="Satu produk per baris: Nama|N%|P2O5%|K2O%
+Contoh: NPK 15-15-15|15|15|15
+Urea|46|0|0
+SP-36|0|36|0
+KCl|0|0|60" android:inputType="textMultiLine|textCapSentences" android:textColor="@color/text_main" android:textColorHint="@color/text_muted"/>
 
                 <EditText
                     android:id="@+id/fnPhase"
@@ -176,6 +192,7 @@
                     android:textColor="@color/text_main"
                     android:textColorHint="@color/text_muted"
                     android:singleLine="true"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Fase tanaman (teks; umur dihitung otomatis dari tanggal tanam)" android:textColor="@color/text_muted" android:textSize="11sp"/>
 
                 <EditText
                     android:id="@+id/fnArea"
@@ -186,6 +203,7 @@
                     android:textColor="@color/text_main"
                     android:textColorHint="@color/text_muted"
                     android:singleLine="true"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Luas petak (ha)" android:textColor="@color/text_muted" android:textSize="11sp"/>
 
                 <TextView
                     android:layout_width="match_parent"
@@ -288,6 +306,7 @@
                     android:textColor="@color/text_main"
                     android:textColorHint="@color/text_muted"
                     android:singleLine="true"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="pH (tanpa satuan)" android:textColor="@color/text_muted" android:textSize="11sp"/>
 
                 <EditText
                     android:id="@+id/fnSoilMoisture"
@@ -298,6 +317,7 @@
                     android:textColor="@color/text_main"
                     android:textColorHint="@color/text_muted"
                     android:singleLine="true"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Kelembapan tanah (%)" android:textColor="@color/text_muted" android:textSize="11sp"/>
 
                 <EditText
                     android:id="@+id/fnSoilTemp"
@@ -308,6 +328,7 @@
                     android:textColor="@color/text_main"
                     android:textColorHint="@color/text_muted"
                     android:singleLine="true"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Suhu tanah (°C)" android:textColor="@color/text_muted" android:textSize="11sp"/>
 
                 <EditText
                     android:id="@+id/fnSoilEc"
@@ -318,6 +339,7 @@
                     android:textColor="@color/text_main"
                     android:textColorHint="@color/text_muted"
                     android:singleLine="true"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="EC (µS/cm)" android:textColor="@color/text_muted" android:textSize="11sp"/>
 
                 <EditText
                     android:id="@+id/fnSoilN"
@@ -328,6 +350,7 @@
                     android:textColor="@color/text_main"
                     android:textColorHint="@color/text_muted"
                     android:singleLine="true"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="N tersedia (mg/kg)" android:textColor="@color/text_muted" android:textSize="11sp"/>
 
                 <EditText
                     android:id="@+id/fnSoilP"
@@ -338,6 +361,7 @@
                     android:textColor="@color/text_main"
                     android:textColorHint="@color/text_muted"
                     android:singleLine="true"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="P tersedia (mg/kg)" android:textColor="@color/text_muted" android:textSize="11sp"/>
 
                 <EditText
                     android:id="@+id/fnSoilK"
@@ -348,6 +372,7 @@
                     android:textColor="@color/text_main"
                     android:textColorHint="@color/text_muted"
                     android:singleLine="true"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="K tersedia (mg/kg)" android:textColor="@color/text_muted" android:textSize="11sp"/>
 
                 <EditText
                     android:id="@+id/fnSoilDepth"
@@ -358,6 +383,7 @@
                     android:textColor="@color/text_main"
                     android:textColorHint="@color/text_muted"
                     android:singleLine="true"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Kedalaman tanah (cm)" android:textColor="@color/text_muted" android:textSize="11sp"/>
 
                 <TextView
                     android:layout_width="match_parent"
@@ -371,20 +397,36 @@
                     android:layout_width="match_parent"
                     android:layout_height="48dp"/>
                 <EditText android:id="@+id/fnSoilBulkDensity" android:layout_width="match_parent" android:layout_height="48dp" android:hint="Bulk density (g/cm³); preset mineral 1,30 / gambut 0,30 / input sendiri" android:inputType="numberDecimal" android:textColor="@color/text_main" android:textColorHint="@color/text_muted" android:singleLine="true"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Bulk density (g/cm³)" android:textColor="@color/text_muted" android:textSize="11sp"/>
                 <EditText android:id="@+id/fnSoilFc" android:layout_width="match_parent" android:layout_height="48dp" android:hint="Field Capacity / FC (% volume), hasil lab" android:inputType="numberDecimal" android:textColor="@color/text_main" android:textColorHint="@color/text_muted" android:singleLine="true"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Kapasitas lapang (%)" android:textColor="@color/text_muted" android:textSize="11sp"/>
                 <EditText android:id="@+id/fnSoilPwp" android:layout_width="match_parent" android:layout_height="48dp" android:hint="Permanent Wilting Point / PWP (% volume), hasil lab" android:inputType="numberDecimal" android:textColor="@color/text_main" android:textColorHint="@color/text_muted" android:singleLine="true"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Titik layu permanen (%)" android:textColor="@color/text_muted" android:textSize="11sp"/>
                 <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Ambang N tersedia (isi sesuai metode/lab, mg/kg)" android:textColor="@color/cyan" android:textSize="15sp"/>
                 <EditText android:id="@+id/fnSoilNLow" android:layout_width="match_parent" android:layout_height="48dp" android:hint="Batas N rendah (mg/kg), opsional" android:inputType="numberDecimal" android:textColor="@color/text_main" android:textColorHint="@color/text_muted" android:singleLine="true"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Ambang N rendah (mg/kg)" android:textColor="@color/text_muted" android:textSize="11sp"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Batas N rendah (mg/kg)" android:textColor="@color/text_muted" android:textSize="11sp"/>
                 <EditText android:id="@+id/fnSoilNHigh" android:layout_width="match_parent" android:layout_height="48dp" android:hint="Batas N tinggi (mg/kg), opsional" android:inputType="numberDecimal" android:textColor="@color/text_main" android:textColorHint="@color/text_muted" android:singleLine="true"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Ambang N tinggi (mg/kg)" android:textColor="@color/text_muted" android:textSize="11sp"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Batas N tinggi (mg/kg)" android:textColor="@color/text_muted" android:textSize="11sp"/>
                 <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Metode analisis N/P/K" android:textColor="@color/cyan" android:textSize="15sp"/>
                 <Spinner android:id="@+id/fnSoilTestMethod" android:layout_width="match_parent" android:layout_height="48dp"/>
                 <EditText android:id="@+id/fnSoilPhBuffer" android:layout_width="match_parent" android:layout_height="48dp" android:hint="pH-buffer (hasil laboratorium), bila pH masam" android:inputType="numberDecimal" android:textColor="@color/text_main" android:textColorHint="@color/text_muted" android:singleLine="true"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="pH-buffer (nilai/metode laboratorium)" android:textColor="@color/text_muted" android:textSize="11sp"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="pH-buffer (nilai laboratorium)" android:textColor="@color/text_muted" android:textSize="11sp"/>
                 <EditText android:id="@+id/fnSoilAlDd" android:layout_width="match_parent" android:layout_height="48dp" android:hint="Al-dd (cmol(+)/kg), bila tersedia" android:inputType="numberDecimal" android:textColor="@color/text_main" android:textColorHint="@color/text_muted" android:singleLine="true"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Al-dd (cmol(+)/kg)" android:textColor="@color/text_muted" android:textSize="11sp"/>
                 <EditText android:id="@+id/fnSoilHDd" android:layout_width="match_parent" android:layout_height="48dp" android:hint="H-dd (cmol(+)/kg), bila tersedia" android:inputType="numberDecimal" android:textColor="@color/text_main" android:textColorHint="@color/text_muted" android:singleLine="true"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="H-dd (cmol(+)/kg)" android:textColor="@color/text_muted" android:textSize="11sp"/>
                 <EditText android:id="@+id/fnSoilCec" android:layout_width="match_parent" android:layout_height="48dp" android:hint="CEC / KTK (cmol(+)/kg), bila tersedia" android:inputType="numberDecimal" android:textColor="@color/text_main" android:textColorHint="@color/text_muted" android:singleLine="true"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="CEC/KTK (cmol(+)/kg)" android:textColor="@color/text_muted" android:textSize="11sp"/>
                 <EditText android:id="@+id/fnSoilOm" android:layout_width="match_parent" android:layout_height="48dp" android:hint="Bahan organik (%)" android:inputType="numberDecimal" android:textColor="@color/text_main" android:textColorHint="@color/text_muted" android:singleLine="true"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Bahan organik (%)" android:textColor="@color/text_muted" android:textSize="11sp"/>
                 <EditText android:id="@+id/fnSoilEce" android:layout_width="match_parent" android:layout_height="48dp" android:hint="ECe laboratorium (dS/m), jangan diisi dengan EC sensor" android:inputType="numberDecimal" android:textColor="@color/text_main" android:textColorHint="@color/text_muted" android:singleLine="true"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="ECe laboratorium (dS/m)" android:textColor="@color/text_muted" android:textSize="11sp"/>
                 <EditText android:id="@+id/fnSoilLimeReq" android:layout_width="match_parent" android:layout_height="48dp" android:hint="Kebutuhan kapur/dolomit hasil lab (kg/ha), bila ada" android:inputType="numberDecimal" android:textColor="@color/text_main" android:textColorHint="@color/text_muted" android:singleLine="true"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Kebutuhan kapur/dolomit (kg/ha)" android:textColor="@color/text_muted" android:textSize="11sp"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Kebutuhan kapur/dolomit laboratorium (kg/ha)" android:textColor="@color/text_muted" android:textSize="11sp"/>
                 <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="Catatan: stok hara adalah massa unsur pada lapisan tanah; stok bukan berarti seluruhnya langsung terserap tanaman." android:textColor="@color/text_muted" android:textSize="14sp"/>
 
                 <TextView
@@ -422,6 +464,7 @@
                     android:textColor="@color/text_main"
                     android:textColorHint="@color/text_muted"
                     android:singleLine="true"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Suhu udara (°C)" android:textColor="@color/text_muted" android:textSize="11sp"/>
 
                 <EditText
                     android:id="@+id/fnAirRh"
@@ -432,6 +475,7 @@
                     android:textColor="@color/text_main"
                     android:textColorHint="@color/text_muted"
                     android:singleLine="true"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Kelembapan udara (%)" android:textColor="@color/text_muted" android:textSize="11sp"/>
 
                 <EditText
                     android:id="@+id/fnPressure"
@@ -442,6 +486,7 @@
                     android:textColor="@color/text_main"
                     android:textColorHint="@color/text_muted"
                     android:singleLine="true"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Tekanan udara (hPa)" android:textColor="@color/text_muted" android:textSize="11sp"/>
 
                 <EditText
                     android:id="@+id/fnRain24"
@@ -452,6 +497,7 @@
                     android:textColor="@color/text_main"
                     android:textColorHint="@color/text_muted"
                     android:singleLine="true"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Curah hujan (mm/hari)" android:textColor="@color/text_muted" android:textSize="11sp"/>
 
                 <EditText
                     android:id="@+id/fnEt0"
@@ -462,6 +508,7 @@
                     android:textColor="@color/text_main"
                     android:textColorHint="@color/text_muted"
                     android:singleLine="true"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="ET₀ (mm/hari)" android:textColor="@color/text_muted" android:textSize="11sp"/>
 
                 <EditText
                     android:id="@+id/fnLux"
@@ -472,6 +519,7 @@
                     android:textColor="@color/text_main"
                     android:textColorHint="@color/text_muted"
                     android:singleLine="true"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Cahaya estimasi (lux)" android:textColor="@color/text_muted" android:textSize="11sp"/>
 
                 <EditText
                     android:id="@+id/fnPar"
@@ -482,6 +530,7 @@
                     android:textColor="@color/text_main"
                     android:textColorHint="@color/text_muted"
                     android:singleLine="true"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="PPFD estimasi (µmol/m²/s)" android:textColor="@color/text_muted" android:textSize="11sp"/>
 
                 <EditText
                     android:id="@+id/fnSunHours"
@@ -492,6 +541,7 @@
                     android:textColor="@color/text_main"
                     android:textColorHint="@color/text_muted"
                     android:singleLine="true"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Sunshine duration (jam/hari)" android:textColor="@color/text_muted" android:textSize="11sp"/>
 
                 <TextView
                     android:layout_width="match_parent"
@@ -514,6 +564,7 @@
                     android:textColor="@color/text_main"
                     android:textColorHint="@color/text_muted"
                     android:singleLine="true"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Kecepatan angin (m/s)" android:textColor="@color/text_muted" android:textSize="11sp"/>
 
                 <EditText
                     android:id="@+id/fnBaseTemp"
@@ -524,6 +575,7 @@
                     android:textColor="@color/text_main"
                     android:textColorHint="@color/text_muted"
                     android:singleLine="true"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Suhu dasar Tbase (°C)" android:textColor="@color/text_muted" android:textSize="11sp"/>
             </LinearLayout>
 
             <LinearLayout

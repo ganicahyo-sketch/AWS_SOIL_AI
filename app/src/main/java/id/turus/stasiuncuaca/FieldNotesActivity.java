@@ -46,7 +46,7 @@ public class FieldNotesActivity extends Activity {
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.US);
     private SharedPreferences prefs;
 
-    private EditText date, time, crop, plantDate, hst, area, observation, action, targetYield;
+    private EditText date, time, crop, plantDate, hst, area, observation, action, targetYield, fertilizerPlan, plantDensity;
     private EditText soilPh, soilMoisture, soilTemp, soilEc, soilN, soilP, soilK, soilDepth, soilBulkDensity, soilFc, soilPwp, soilPhBuffer, soilAlDd, soilHDd, soilCec, soilOm, soilEce, soilLimeReq, soilNLow, soilNHigh;
     private Spinner soilTestMethod, ageUnit, dataSource, bulkDensityPreset;
     private EditText airTemp, airRh, pressure, rain24, et0, lux, par, sunHours, windSpeed;
@@ -101,6 +101,8 @@ public class FieldNotesActivity extends Activity {
         observation = findViewById(R.id.fnObservation);
         action = findViewById(R.id.fnAction);
         targetYield = findViewById(R.id.fnTargetYield);
+        fertilizerPlan = findViewById(R.id.fnFertilizerPlan);
+        plantDensity = findViewById(R.id.fnPlantDensity);
 
         soilPh = findViewById(R.id.fnSoilPh);
         soilMoisture = findViewById(R.id.fnSoilMoisture);
@@ -156,6 +158,7 @@ public class FieldNotesActivity extends Activity {
         bindSpinner(cultivation, CULTIVATION);
         bindSpinner(dataSource, DATA_SOURCES);
         bindSpinner(bulkDensityPreset, BULK_DENSITY_PRESETS);
+        bindSpinner(ageUnit, new String[]{"HST / hari", "MST / minggu"});
         selectSpinner(dataSource, prefs.getString("agro_data_source", DATA_SOURCES[0]));
         int bdPreset = prefs.getInt("soil_bd_preset", 0);
         if (bdPreset < 0 || bdPreset >= BULK_DENSITY_PRESETS.length) bdPreset = 0;
@@ -175,9 +178,11 @@ public class FieldNotesActivity extends Activity {
         crop.setText(prefs.getString("crop", ""));
         area.setText(prefs.getString("farm_area_ha", ""));
         plantDate.setText(prefs.getString("farm_planting_date", ""));
-        hst.setText(prefs.getString("farm_hst", ""));
-        String savedAgeValue=prefs.getString("farm_age_value", ""); if (!savedAgeValue.isEmpty()) hst.setText(savedAgeValue);
+        hst.setText("");
         selectSpinner(ageUnit,prefs.getString("farm_age_unit","HST / hari"));
+        plantDensity.setText(prefs.getString("farm_plant_density_ha", isOilPalm() ? "143" : ""));
+        fertilizerPlan.setText(prefs.getString("fertilizer_plan", "NPK 15-15-15|15|15|15"));
+        configureAgeForCrop();
         targetYield.setText(prefs.getString("farm_target_yield_t_ha", ""));
         soilPh.setText(prefs.getString("soil_ph", ""));
         soilMoisture.setText(prefs.getString("soil_moisture_pct", ""));
@@ -203,6 +208,8 @@ public class FieldNotesActivity extends Activity {
         pressure.setText(prefs.getString("om_pressure", ""));
         rain24.setText(prefs.getString("om_rain", ""));
         et0.setText(prefs.getString("om_et0", ""));
+        lux.setText(prefs.getString("om_lux", ""));
+        par.setText(prefs.getString("om_ppfd", ""));
         vpdFromOpenMeteo();
         windSpeed.setText(prefs.getString("om_wind_speed", ""));
         sunHours.setText(prefs.getString("om_sun_hours", ""));
@@ -230,7 +237,11 @@ public class FieldNotesActivity extends Activity {
         });
         plantDate.setOnFocusChangeListener((v, hasFocus) -> { if (!hasFocus) updateAutoPhase(); });
         hst.setOnFocusChangeListener((v, hasFocus) -> { if (!hasFocus) updateAutoPhase(); });
-        crop.setOnFocusChangeListener((v, hasFocus) -> { if (!hasFocus) updateAutoPhase(); });
+        crop.setOnFocusChangeListener((v, hasFocus) -> { if (!hasFocus) { configureAgeForCrop(); updateAutoPhase(); } });
+        ageUnit.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override public void onItemSelected(AdapterView<?> parent, android.view.View view, int position, long id) { updateAutoPhase(); }
+            @Override public void onNothingSelected(AdapterView<?> parent) {}
+        });
 
         updateAutoPhase();
         applyBulkDensityPreset(bdPreset);
@@ -256,25 +267,58 @@ public class FieldNotesActivity extends Activity {
         spinner.setAdapter(a);
     }
 
+    private boolean isOilPalm() {
+        String c = crop == null ? "" : crop.getText().toString().trim().toLowerCase(Locale.US);
+        return c.contains("sawit") || c.contains("oil palm") || c.contains("kelapa palm");
+    }
+
+    private void configureAgeForCrop() {
+        if (ageUnit == null || plantDate == null || hst == null) return;
+        if (isOilPalm()) {
+            if (plantDensity.getText().toString().trim().isEmpty()) plantDensity.setText("143");
+            bindSpinner(ageUnit, new String[]{"Tahun (sawit)"});
+            plantDate.setHint("Tahun tanam sawit (YYYY), contoh 2018");
+            hst.setHint("Umur sawit otomatis (tahun)");
+        } else {
+            bindSpinner(ageUnit, new String[]{"HST / hari", "MST / minggu"});
+            String saved = prefs == null ? "HST / hari" : prefs.getString("farm_age_unit", "HST / hari");
+            selectSpinner(ageUnit, saved);
+            plantDate.setHint("Tanggal tanam (YYYY-MM-DD)");
+            hst.setHint("Umur tanaman otomatis dari tanggal tanam");
+        }
+        hst.setFocusable(false);
+        hst.setFocusableInTouchMode(false);
+        hst.setInputType(InputType.TYPE_CLASS_TEXT);
+    }
+
     private void updateAutoPhase() {
         String c = crop.getText().toString().trim();
         int age = currentHst();
         if (age >= 0) {
-            autoPhase.setText("Prediksi fase: " + AgronomyEngine.phase(age, c) + " • HST " + age + " (input " + hst.getText().toString().trim() + " " + ageUnit.getSelectedItem() + ")");
+            double shown = isOilPalm() ? age / 365.25 : ("MST / minggu".equals(String.valueOf(ageUnit.getSelectedItem())) ? age / 7.0 : age);
+            String unit = isOilPalm() ? "tahun" : String.valueOf(ageUnit.getSelectedItem()).contains("MST") ? "MST" : "HST";
+            hst.setText(String.format(Locale.US, isOilPalm() ? "%.1f" : unit.equals("MST") ? "%.1f" : "%.0f", shown));
+            autoPhase.setText("Prediksi fase: " + AgronomyEngine.phase(age, c) + " • umur otomatis " + String.format(Locale.US, "%.1f", shown) + " " + unit + " (setara " + age + " hari)");
         } else {
-            autoPhase.setText("Prediksi fase: isi tanggal tanam atau umur tanaman.");
+            hst.setText("");
+            autoPhase.setText(isOilPalm() ? "Masukkan tahun tanam sawit (YYYY); umur dihitung otomatis." : "Masukkan tanggal tanam; umur dihitung otomatis dari tanggal hari ini.");
         }
     }
 
     private int currentHst() {
-        if (validDate(plantDate.getText().toString().trim())) {
-            try {
-                int d=(int)java.time.temporal.ChronoUnit.DAYS.between(LocalDate.parse(plantDate.getText().toString().trim(),DATE_FMT),LocalDate.now(WIB));
-                if(d>=0) return d;
-            } catch(Exception ignored) {}
-        }
-        double raw=num(hst.getText().toString());
-        return Double.isNaN(raw)?-1:ageToHst(raw);
+        String rawDate = plantDate.getText().toString().trim();
+        try {
+            if (isOilPalm() && rawDate.matches("\\d{4}")) {
+                int year = Integer.parseInt(rawDate);
+                if (year < 1900 || year > LocalDate.now(WIB).getYear()) return -1;
+                return (int) java.time.temporal.ChronoUnit.DAYS.between(LocalDate.of(year, 1, 1), LocalDate.now(WIB));
+            }
+            if (validDate(rawDate)) {
+                int d=(int)java.time.temporal.ChronoUnit.DAYS.between(LocalDate.parse(rawDate,DATE_FMT),LocalDate.now(WIB));
+                return d >= 0 ? d : -1;
+            }
+        } catch(Exception ignored) {}
+        return -1;
     }
 
 
@@ -294,8 +338,9 @@ public class FieldNotesActivity extends Activity {
         String c = crop.getText().toString().trim();
         if (c.isEmpty()) { crop.setError("Tanaman wajib diisi"); crop.requestFocus(); return; }
         if (!validDate(date.getText().toString().trim())) { date.setError("Gunakan YYYY-MM-DD"); date.requestFocus(); return; }
-        if (!plantDate.getText().toString().trim().isEmpty() && !validDate(plantDate.getText().toString().trim())) {
-            plantDate.setError("Gunakan YYYY-MM-DD"); return;
+        String planting = plantDate.getText().toString().trim();
+        if (!planting.isEmpty() && !(isOilPalm() ? planting.matches("\\d{4}") && Integer.parseInt(planting) <= LocalDate.now(WIB).getYear() && Integer.parseInt(planting) >= 1900 : validDate(planting))) {
+            plantDate.setError(isOilPalm() ? "Masukkan tahun tanam YYYY" : "Gunakan YYYY-MM-DD"); return;
         }
         try {
             JSONObject o = new JSONObject();
@@ -304,9 +349,13 @@ public class FieldNotesActivity extends Activity {
             o.put("crop", c);
             o.put("cultivation", cultivation.getSelectedItem().toString());
             o.put("plantingDate", plantDate.getText().toString().trim());
-            putTextNumber(o, "hst", hst);
+            o.put("hst", currentHst());
+            o.put("ageValue", hst.getText().toString().trim());
+            o.put("ageUnit", String.valueOf(ageUnit.getSelectedItem()));
             putTextNumber(o, "targetYieldTHa", targetYield);
             putTextNumber(o, "areaHa", area);
+            putTextNumber(o, "plantDensityHa", plantDensity);
+            o.put("fertilizerPlan", fertilizerPlan.getText().toString().trim());
             o.put("phase", agePhase());
             o.put("type", noteType.getSelectedItem().toString());
             o.put("severity", severity.getSelectedItem().toString());
@@ -339,19 +388,23 @@ public class FieldNotesActivity extends Activity {
             putTextNumber(o, "rain24mm", rain24);
             putTextNumber(o, "et0Mm", et0);
             putTextNumber(o, "lux", lux);
+            putTextNumber(o, "luxEstimate", lux);
             putTextNumber(o, "parUmol", par);
+            putTextNumber(o, "ppfdUmolM2S", par);
             putTextNumber(o, "sunHours", sunHours);
             putTextNumber(o, "windSpeedMs", windSpeed);
             o.put("windDirection", windDirection.getSelectedItem().toString());
             o.put("created", System.currentTimeMillis());
 
-            appendHistory(prefs, KEY_NOTES, o, 500);
-            prefs.edit()
+            if (!appendHistory(prefs, KEY_NOTES, o, 500)) throw new IllegalStateException("Penyimpanan riwayat ditolak perangkat");
+            boolean profileSaved = prefs.edit()
                     .putString("crop", c)
                     .putString("farm_area_ha", area.getText().toString().trim())
                     .putString("farm_cultivation_mode", cultivation.getSelectedItem().toString())
                     .putString("farm_planting_date", plantDate.getText().toString().trim())
                     .putString("farm_hst", String.valueOf(currentHst())).putString("farm_age_value", hst.getText().toString().trim()).putString("farm_age_unit", ageUnit.getSelectedItem().toString())
+                    .putString("farm_plant_density_ha", plantDensity.getText().toString().trim())
+                    .putString("fertilizer_plan", fertilizerPlan.getText().toString().trim())
                     .putString("farm_target_yield_t_ha", targetYield.getText().toString().trim())
                     .putString("soil_ph", soilPh.getText().toString().trim())
                     .putString("soil_moisture_pct", soilMoisture.getText().toString().trim())
@@ -372,19 +425,20 @@ public class FieldNotesActivity extends Activity {
                     .putString("soil_lime_requirement_kg_ha", soilLimeReq.getText().toString().trim())
                     .putString("soil_test_method", soilTestMethod.getSelectedItem().toString())
                     .putInt("soil_bd_preset", bulkDensityPreset.getSelectedItemPosition())
-                    .apply();
+                    .commit();
 
-            Toast.makeText(this, "Catatan lapangan tersimpan.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, profileSaved ? "Catatan lapangan tersimpan." : "Catatan tersimpan; sebagian pengaturan profil gagal diperbarui.", Toast.LENGTH_SHORT).show();
             observation.setText(""); action.setText("");
-            refreshViews(prefs); runAnalysis(prefs);
+            try { refreshViews(prefs); runAnalysis(prefs); }
+            catch (Exception analysisError) { Toast.makeText(this, "Catatan tersimpan; penyegaran analisis perlu diulang.", Toast.LENGTH_LONG).show(); }
         } catch (Exception ex) {
-            Toast.makeText(this, "Catatan lapangan gagal disimpan.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Catatan gagal disimpan: " + (ex.getMessage() == null ? ex.getClass().getSimpleName() : ex.getMessage()), Toast.LENGTH_LONG).show();
         }
     }
 
     private String agePhase() {
-        double v = num(hst.getText().toString());
-        return Double.isNaN(v) ? "" : AgronomyEngine.phase((int)Math.round(v), crop.getText().toString().trim());
+        int age = currentHst();
+        return age < 0 ? "" : AgronomyEngine.phase(age, crop.getText().toString().trim());
     }
 
     private void showFertilizerDialog(SharedPreferences prefs) {
@@ -663,8 +717,10 @@ public class FieldNotesActivity extends Activity {
             setOm(soilTemp, c.optDouble("soil_temperature_0_to_10cm",Double.NaN), tsFirst && hasTs(tsMeta,tsFeed,new String[]{"suhu tanah","soil temp","soil_temperature"},new String[]{}));
             setOm(soilMoisture, c.optDouble("soil_moisture_0_to_10cm",Double.NaN)*100.0, tsFirst && hasTs(tsMeta,tsFeed,new String[]{"kelembapan tanah","soil moisture","soil_moisture","moisture"},new String[]{"udara","air"}));
             setOm(windSpeed, c.optDouble("wind_speed_10m",Double.NaN), tsFirst && hasTs(tsMeta,tsFeed,new String[]{"kecepatan angin","wind speed","wind"},new String[]{"arah","direction","gust"}));
-            setOm(par, LightConversion.parToPpfd(LightConversion.shortwaveToParWm2(c.optDouble("shortwave_radiation",Double.NaN))), false);
-            setOm(sunHours, d==null?Double.NaN:first(d,"sunshine_duration")/3600.0, tsFirst && hasTs(tsMeta,tsFeed,new String[]{"sunshine","lama penyinaran","durasi sinar"},new String[]{}));
+            double sw = c.optDouble("shortwave_radiation",Double.NaN);
+            setOm(lux, LightConversion.shortwaveToLuxEstimate(sw), false);
+            setOm(par, LightConversion.shortwaveToPpfd(sw), false);
+            setOm(sunHours, d==null?Double.NaN:first(d,"sunshine_duration")/3600.0, false);
             String dir=MainActivity.compass(c.optDouble("wind_direction_10m",Double.NaN)); if(!dir.equals("--") && !(tsFirst && hasTs(tsMeta,tsFeed,new String[]{"arah angin","wind direction","direction"},new String[]{}))) selectSpinner(windDirection,dir);
             prefs.edit().putString("om_temp", show(c.optDouble("temperature_2m",Double.NaN)))
                     .putString("om_rh", show(c.optDouble("relative_humidity_2m",Double.NaN)))
@@ -675,7 +731,12 @@ public class FieldNotesActivity extends Activity {
                     .putString("om_soil_moisture", show(c.optDouble("soil_moisture_0_to_10cm",Double.NaN)))
                     .putString("om_wind_speed", show(c.optDouble("wind_speed_10m",Double.NaN)))
                     .putString("om_wind_direction", dir)
-                    .putString("om_vpd", show(c.optDouble("vapour_pressure_deficit",Double.NaN))).apply();
+                    .putString("om_radiation", show(c.optDouble("shortwave_radiation",Double.NaN)))
+                    .putString("om_vpd", show(c.optDouble("vapour_pressure_deficit",Double.NaN)))
+                    .putString("om_lux", show(LightConversion.shortwaveToLuxEstimate(c.optDouble("shortwave_radiation",Double.NaN))))
+                    .putString("om_par", show(LightConversion.shortwaveToParWm2(c.optDouble("shortwave_radiation",Double.NaN))))
+                    .putString("om_ppfd", show(LightConversion.shortwaveToPpfd(c.optDouble("shortwave_radiation",Double.NaN))))
+                    .putString("om_sun_hours", show(d==null?Double.NaN:first(d,"sunshine_duration")/3600.0)).apply();
         } catch(Exception ignored) {}
     }
 
@@ -691,8 +752,10 @@ public class FieldNotesActivity extends Activity {
             c.put("wind_speed_10m", num(prefs.getString("om_wind_speed","")));
             c.put("wind_direction_10m", windDegrees(prefs.getString("om_wind_direction","")));
             c.put("vapour_pressure_deficit", num(prefs.getString("om_vpd","")));
+            c.put("shortwave_radiation", num(prefs.getString("om_radiation","")));
             JSONArray rain=new JSONArray(); rain.put(num(prefs.getString("om_rain",""))); d.put("precipitation_sum",rain);
             JSONArray et=new JSONArray(); et.put(num(prefs.getString("om_et0",""))); d.put("et0_fao_evapotranspiration",et);
+            JSONArray sunshine=new JSONArray(); sunshine.put(num(prefs.getString("om_sun_hours",""))*3600.0); d.put("sunshine_duration",sunshine);
             root.put("current",c).put("daily",d); return root;
         } catch(Exception e){return null;}
     }
@@ -857,7 +920,7 @@ public class FieldNotesActivity extends Activity {
             if (!Double.isNaN(ph)) s.append("  Tindakan: ").append(AgronomyEngine.amendmentAdvice(ph, p, cultivation.getSelectedItem().toString())).append("\n");
             s.append("N tersedia: ").append(show(n)).append(" mg/kg → ").append(AgronomyEngine.classifyN(n,nLow,nHigh)).append("\n");
             s.append("N-total diprediksi dari N tersedia: ").append(NitrogenInference.estimateTotalN(n)).append("\n");
-            s.append("Kelas N-total yang mungkin: ").append(NitrogenInference.classifyRange(n)).append("\n");
+            s.append("Status N-total estimasi titik tengah: ").append(NitrogenInference.classifyRange(n)).append("\n");
             s.append("P tersedia: ").append(show(pp)).append(" mg/kg → ").append(AgronomyEngine.classifyP(pp, methodName)).append("\n");
             s.append("K tersedia: ").append(show(k)).append(" mg/kg → ").append(AgronomyEngine.classifyK(k, methodName)).append("\n");
             s.append("EC: ").append(show(ec)).append(" µS/cm → ").append(AgronomyEngine.classifyEC(ec, p)).append("\n");
@@ -1037,10 +1100,18 @@ public class FieldNotesActivity extends Activity {
         timelineView.setText(buildTimeline(prefs, c));
     }
 
-    private void appendHistory(SharedPreferences prefs, String key, JSONObject o, int max) throws Exception {
-        JSONArray old = new JSONArray(prefs.getString(key, "[]")); JSONArray out = new JSONArray();
-        int start = Math.max(0, old.length() - max + 1); for (int i = start; i < old.length(); i++) out.put(old.get(i)); out.put(o);
-        prefs.edit().putString(key, out.toString()).apply();
+    private boolean appendHistory(SharedPreferences prefs, String key, JSONObject o, int max) throws Exception {
+        JSONArray old = new JSONArray(prefs.getString(key, "[]"));
+        ArrayList<JSONObject> kept = new ArrayList<>();
+        int start = Math.max(0, old.length() - max + 1);
+        for (int i = start; i < old.length(); i++) { JSONObject item = old.optJSONObject(i); if (item != null) kept.add(item); }
+        kept.add(o);
+        JSONArray out = new JSONArray(); for (JSONObject item : kept) out.put(item);
+        // Keep one SharedPreferences value bounded; very long free-text notes must not block future saves.
+        while (out.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8).length > 250000 && kept.size() > 1) {
+            kept.remove(0); out = new JSONArray(); for (JSONObject item : kept) out.put(item);
+        }
+        return prefs.edit().putString(key, out.toString()).commit();
     }
 
     private LinearLayout dialogRoot() { LinearLayout r = new LinearLayout(this); r.setOrientation(LinearLayout.VERTICAL); int p = dp(18); r.setPadding(p,p,p,p); return r; }
